@@ -102,6 +102,22 @@ export class TiposInsumoComponent implements OnInit {
 		return this.editId() ? 'Editar tipo de insumo' : 'Nuevo tipo de insumo';
 	}
 
+	private static readonly _ICONOS: Array<{ claves: string[]; icono: string }> = [
+		{ claves: ['fertiliz'], icono: 'M12 2s7 8.5 7 13a7 7 0 01-14 0c0-4.5 7-13 7-13z' },
+		{ claves: ['fungicid', 'hongo'], icono: 'M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4z' },
+		{ claves: ['herbicid', 'maleza'], icono: 'M12 2a10 10 0 100 20 10 10 0 000-20zM4.9 4.9l14.2 14.2' },
+		{ claves: ['insecticid', 'plaga'], icono: 'M12 20v-9M9 7.13v-1a3 3 0 116 0v1M12 20c-3.3 0-6-2.7-6-6v-3a6 6 0 0112 0v3c0 3.3-2.7 6-6 6zM6.53 9H4M20 9h-2.53M6 13H2M22 13h-4M6.53 17H4M20 17h-2.53' },
+		{ claves: ['semilla', 'material vegetal', 'plantul'], icono: 'M7 8c0 3 2 5 5 5s5-2 5-5c-2 0-3 1-5 1S9 8 7 8zM12 13v9' },
+	];
+
+	private static readonly _ICONO_DEFECTO = 'M20.59 13.41L11 3.83A2 2 0 009.5 3H4a1 1 0 00-1 1v5.5a2 2 0 00.59 1.41l9.58 9.58a2 2 0 002.83 0l6.59-6.59a2 2 0 000-2.83zM7 7h.01';
+
+	protected iconoPara(nombre: string): string {
+		const clave = nombre.toLowerCase();
+		const match = TiposInsumoComponent._ICONOS.find(entry => entry.claves.some(c => clave.includes(c)));
+		return match ? match.icono : TiposInsumoComponent._ICONO_DEFECTO;
+	}
+
 	protected readonly search   = signal('');
 	protected readonly page     = signal(1);
 	protected readonly pageSize = signal(10);

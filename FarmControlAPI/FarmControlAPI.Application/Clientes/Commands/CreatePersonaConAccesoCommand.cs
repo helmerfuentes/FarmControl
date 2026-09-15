@@ -50,7 +50,7 @@ public class CreatePersonaConAccesoCommandHandler : IRequestHandler<CreatePerson
 		var accesos = (request.Accesos ?? []).GroupBy(a => a.FincaId).Select(g => g.First()).ToList();
 		var fincaIds = accesos.Select(a => a.FincaId).ToList();
 
-		if (fincaIds.Count == 0)
+		if (fincaIds.Count == 0 && request.TipoPersona != TipoPersona.Admin)
 		{
 			result = Result<PersonaDto>.Failure("Debe asignar al menos una finca.");
 			return result;

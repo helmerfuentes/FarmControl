@@ -36,36 +36,28 @@
 			(searchChange)="onSearch($event)"
 			(pageChange)="onPageChange($event)"
 			(pageSizeChange)="onPageSizeChange($event)" />
-		<div class="data-table-wrap cards-on-mobile">
-			<table class="data-table">
-				<thead>
-					<tr>
-						<th>Nombre</th>
-						<th>Descripción</th>
-						@if (isAdmin()) { <th></th> }
-					</tr>
-				</thead>
-				<tbody>
-					@for (item of pageItems(); track item.id) {
-						<tr (click)="openEdit(item)">
-							<td data-label="Nombre">{{ item.nombre }}</td>
-							<td class="col-desc" data-label="Descripción">{{ item.descripcion }}</td>
-							@if (isAdmin()) {
-								<td>
-									<div class="row-actions">
-										<button class="btn btn-icon btn-ghost" title="Eliminar"
-											(click)="$event.stopPropagation(); confirmDelete(item.id)">
-											<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-												<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>
-											</svg>
-										</button>
-									</div>
-								</td>
-							}
-						</tr>
+		<div class="tipos-grid">
+			@for (item of pageItems(); track item.id) {
+				<div class="tipo-card" (click)="openEdit(item)">
+					<div class="tipo-icon">
+						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+							<path [attr.d]="iconoPara(item.nombre)"/>
+						</svg>
+					</div>
+					<div class="tipo-body">
+						<h3 class="tipo-nombre">{{ item.nombre }}</h3>
+						<p class="tipo-desc">{{ item.descripcion }}</p>
+					</div>
+					@if (isAdmin()) {
+						<button class="btn btn-icon btn-ghost tipo-delete" title="Eliminar"
+							(click)="$event.stopPropagation(); confirmDelete(item.id)">
+							<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+								<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>
+							</svg>
+						</button>
 					}
-				</tbody>
-			</table>
+				</div>
+			}
 		</div>
 	}
 </div>

@@ -16,6 +16,12 @@ internal static class FincasEndpoints
 			return EndpointHelpers.ToResponse(result);
 		});
 
+		fincas.MapPost("/", async (CreateFincaCommand command, IMediator mediator) =>
+		{
+			var result = await mediator.Send(command);
+			return EndpointHelpers.ToCreated(result, $"/fincas/{result.Value?.Id}");
+		}).RequireAuthorization("Admin");
+
 		fincas.MapPut("/{id:int}", async (int id, UpdateFincaCommand command, IMediator mediator) =>
 		{
 			var result = await mediator.Send(command with { Id = id });

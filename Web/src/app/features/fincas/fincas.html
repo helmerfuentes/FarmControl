@@ -6,6 +6,14 @@
 				<h1>Fincas</h1>
 				<p>Tus fincas contratadas y sus parcelas — cada parcela es donde se registran actividades, compras, ventas y procesos de cultivo.</p>
 			</div>
+			@if (isAdmin()) {
+				<button class="btn btn-primary btn-sm" (click)="openNewFinca()">
+					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+						<path d="M12 5v14M5 12h14"/>
+					</svg>
+					Nueva finca
+				</button>
+			}
 		</div>
 
 		@if (loading()) {
@@ -236,6 +244,9 @@
 
 <fc-drawer [title]="drawerTitle()" [open]="panelOpen()" (closed)="closePanel()">
 	@if (panelMode() === 'finca') {
+		@if (errorMsg()) {
+			<p class="form-error">{{ errorMsg() }}</p>
+		}
 		<form [formGroup]="fincaForm" (ngSubmit)="saveFinca()">
 			<div class="form-group">
 				<label class="form-label">Nombre *</label>

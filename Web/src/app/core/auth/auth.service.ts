@@ -1,6 +1,7 @@
 import { Injectable, signal, computed, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
+import { tap } from 'rxjs';
 
 interface LoginResponse {
   token: string;
@@ -56,6 +57,17 @@ export class AuthService {
 
   cambiarContrasena(contrasenaActual: string, contrasenaNueva: string) {
     return this._http.put<void>(`${API_URL}/auth/contrasena`, { contrasenaActual, contrasenaNueva });
+  }
+
+  /**
+   * Reemite el token con los claims (fincaIds, niveles de acceso) al día y actualiza la sesión
+   * guardada. Necesario tras autoservicio como crear una finca propia, donde el token de la
+   * sesión actual quedaría desactualizado hasta un logout/login manual.
+   */
+  refrescarToken() {
+    return this._http.post<LoginResponse>(`${API_URL}/auth/refrescar-token`, {}).pipe(
+      tap(res => this.setSession(res.token, res.rol, this.usuario() ?? ''))
+    );
   }
 
   getPreferenciasDashboard() {

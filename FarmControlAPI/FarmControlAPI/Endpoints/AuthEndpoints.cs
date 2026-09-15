@@ -19,6 +19,12 @@ internal static class AuthEndpoints
 			return EndpointHelpers.ToResponse(result);
 		}).RequireAuthorization();
 
+		app.MapPost("/auth/refrescar-token", async (IMediator mediator) =>
+		{
+			var result = await mediator.Send(new RefrescarTokenCommand());
+			return EndpointHelpers.ToResponse(result);
+		}).RequireAuthorization();
+
 		app.MapGet("/auth/preferencias-dashboard", async (IMediator mediator) =>
 		{
 			var result = await mediator.Send(new GetPreferenciasDashboardQuery());

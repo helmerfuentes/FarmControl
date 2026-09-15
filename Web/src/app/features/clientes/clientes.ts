@@ -2,7 +2,7 @@ import { Component, inject, signal, OnInit } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { ClientesService, FincaConAcceso, PersonaDelCliente, NivelAcceso, nivelAccesoDesde, accesoDesdeNivel, SaludSistema } from '../../core/api/clientes.service';
 import { PlanesService } from '../../core/api/planes.service';
-import { Cliente, Finca, Plan } from '../../core/models';
+import { Cliente, Plan } from '../../core/models';
 import { DrawerComponent } from '../../shared/components/drawer/drawer';
 
 @Component({
@@ -22,10 +22,10 @@ export class ClientesComponent implements OnInit {
 	protected readonly saving    = signal(false);
 	protected readonly errorMsg  = signal<string | null>(null);
 
-	// Wizard de alta: 1 = datos del cliente, 2 = fincas contratadas, 3 = usuario inicial, 4 = resumen
-	protected readonly step = signal<1 | 2 | 3 | 4>(1);
+	// Wizard de alta: 1 = datos del cliente, 2 = usuario administrador inicial, 3 = resumen.
+	// El cliente-admin crea sus propias fincas al iniciar sesión (autoservicio en /app/fincas).
+	protected readonly step = signal<1 | 2 | 3>(1);
 	protected readonly clienteCreado = signal<Cliente | null>(null);
-	protected readonly fincasCreadas = signal<Finca[]>([]);
 	protected readonly usuarioCreadoNombre = signal<string | null>(null);
 
 	protected readonly planes = signal<Plan[]>([]);
@@ -36,7 +36,6 @@ export class ClientesComponent implements OnInit {
 	protected readonly cargandoUsuarios = signal(false);
 	protected readonly fincasCliente = signal<FincaConAcceso[]>([]);
 
-	protected readonly nivelAccesoWizard = signal<NivelAcceso>('total');
 	protected readonly nivelAccesoGestion = signal<NivelAcceso>('total');
 	protected readonly nivelAccesoDesde = nivelAccesoDesde;
 
@@ -59,13 +58,6 @@ export class ClientesComponent implements OnInit {
 	protected readonly contratoForm = this._fb.group({
 		fechaVencimientoContrato: [''],
 		activo: [true],
-	});
-
-	protected readonly fincaForm = this._fb.group({
-		nombre:       ['', Validators.required],
-		ubicacion:    [''],
-		areaTotal:    [0, [Validators.required, Validators.min(0)]],
-		costoTerreno: [0, [Validators.required, Validators.min(0)]],
 	});
 
 	protected readonly usuarioForm = this._fb.group({
@@ -159,22 +151,17 @@ export class ClientesComponent implements OnInit {
 
 	// --- Feature 27: onboarding incompleto — retomar alta ---
 	protected onboardingIncompleto(cliente: Cliente): boolean {
-		return cliente.numFincas === 0 || cliente.numUsuarios === 0;
+		return cliente.numUsuarios === 0;
 	}
 
 	protected continuarAlta(cliente: Cliente, event: Event): void {
 		event.stopPropagation();
 		this.errorMsg.set(null);
-		this._svc.getById(cliente.id).subscribe(detalle => {
-			this.clienteCreado.set(cliente);
-			this.fincasCreadas.set(detalle.fincas.map(f => ({ id: f.id, nombre: f.nombre, ubicacion: f.ubicacion ?? '', areaTotal: 0, costoTerreno: 0 })));
-			this.usuarioCreadoNombre.set(null);
-			this.step.set(cliente.numFincas === 0 ? 2 : 3);
-			this.fincaForm.reset({ areaTotal: 0, costoTerreno: 0 });
-			this.usuarioForm.reset();
-			this.nivelAccesoWizard.set('total');
-			this.panelOpen.set(true);
-		});
+		this.clienteCreado.set(cliente);
+		this.usuarioCreadoNombre.set(null);
+		this.step.set(2);
+		this.usuarioForm.reset();
+		this.panelOpen.set(true);
 	}
 
 	// --- Feature 18: panel de salud del sistema ---
@@ -227,12 +214,9 @@ export class ClientesComponent implements OnInit {
 		this.errorMsg.set(null);
 		this.step.set(1);
 		this.clienteCreado.set(null);
-		this.fincasCreadas.set([]);
 		this.usuarioCreadoNombre.set(null);
 		this.clienteForm.reset({ planId: '' });
-		this.fincaForm.reset({ areaTotal: 0, costoTerreno: 0 });
 		this.usuarioForm.reset();
-		this.nivelAccesoWizard.set('total');
 		this.panelOpen.set(true);
 	}
 
@@ -263,38 +247,10 @@ export class ClientesComponent implements OnInit {
 		});
 	}
 
-	protected agregarFinca(): void {
-		const cliente = this.clienteCreado();
-		if (!cliente || this.fincaForm.invalid || this.saving()) { return; }
-		const raw = this.fincaForm.value;
-		this.saving.set(true);
-		this.errorMsg.set(null);
-		this._svc.createFinca(cliente.id, {
-			nombre: raw.nombre!,
-			ubicacion: raw.ubicacion || null,
-			areaTotal: Number(raw.areaTotal),
-			costoTerreno: Number(raw.costoTerreno),
-		}).subscribe({
-			next: finca => {
-				this.saving.set(false);
-				this.fincasCreadas.update(fincas => [...fincas, finca]);
-				this.fincaForm.reset({ areaTotal: 0, costoTerreno: 0 });
-			},
-			error: err => { this.saving.set(false); this.errorMsg.set(err?.error?.error ?? 'No se pudo crear la finca.'); },
-		});
-	}
-
-	protected irAPasoUsuario(): void {
-		if (this.fincasCreadas().length === 0) { return; }
-		this.step.set(3);
-	}
-
 	protected guardarUsuario(): void {
 		const cliente = this.clienteCreado();
-		const fincaIds = this.fincasCreadas().map(f => f.id);
-		if (!cliente || this.usuarioForm.invalid || fincaIds.length === 0 || this.saving()) { return; }
+		if (!cliente || this.usuarioForm.invalid || this.saving()) { return; }
 		const raw = this.usuarioForm.value;
-		const acceso = accesoDesdeNivel(this.nivelAccesoWizard());
 		this.saving.set(true);
 		this.errorMsg.set(null);
 		this._svc.createUsuario(cliente.id, {
@@ -305,12 +261,12 @@ export class ClientesComponent implements OnInit {
 			tipoPersona: 'Admin',
 			nombreUsuario: raw.nombreUsuario!,
 			contrasena: raw.contrasena!,
-			accesos: fincaIds.map(fincaId => ({ fincaId, ...acceso })),
+			accesos: [],
 		}).subscribe({
 			next: () => {
 				this.saving.set(false);
 				this.usuarioCreadoNombre.set(raw.nombreUsuario!);
-				this.step.set(4);
+				this.step.set(3);
 			},
 			error: err => { this.saving.set(false); this.errorMsg.set(err?.error?.error ?? 'No se pudo crear el usuario.'); },
 		});

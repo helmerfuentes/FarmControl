@@ -216,6 +216,14 @@ $breakpoint-mobile: 900px;
   }
 }
 
+// Contenedor scrollable de la navegación (entre header y footer, que quedan fijos)
+.sidebar-nav {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
 // Secciones de navegación
 .nav-section {
   display: flex;

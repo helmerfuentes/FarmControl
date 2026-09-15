@@ -1,4 +1,4 @@
-import { Component, signal, inject, computed, OnInit } from '@angular/core';
+import { Component, signal, inject, computed, effect, OnInit } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { FincaContextService } from '../../core/finca/finca-context.service';
@@ -81,6 +81,7 @@ export class ShellComponent implements OnInit {
   protected readonly contadorNav   = CONTADOR_NAV;
   protected readonly jornaleroNav  = JORNALERO_NAV;
   protected readonly superAdminNav = SUPER_ADMIN_NAV;
+  protected readonly manualUrl = '/manual-admin.html';
   protected readonly usuario       = this._authService.usuario;
   protected readonly isAdmin       = this._authService.isAdmin;
   protected readonly isSocio       = this._authService.isSocio;
@@ -96,11 +97,23 @@ export class ShellComponent implements OnInit {
 
   private static readonly _INTERVALO_NOTIFICACIONES_MS = 120000;
 
-  ngOnInit(): void {
-    if (this.fincaContext.requiereSelector()) {
-      this._fincasService.getAll().subscribe(fincas => this.fincasDisponibles.set(fincas));
-    }
+  constructor() {
+    // Recarga la lista de fincas del selector cada vez que cambian las fincas de la sesión
+    // (ej. el Admin registra una finca propia) — no solo una vez al entrar al shell.
+    effect(() => {
+      const ids = this.fincaContext.fincaIds();
+      if (ids.length > 0) {
+        this._fincasService.getAll().subscribe({
+          next:  fincas => this.fincasDisponibles.set(fincas),
+          error: () => {},
+        });
+      } else {
+        this.fincasDisponibles.set([]);
+      }
+    });
+  }
 
+  ngOnInit(): void {
     if (this.isAdmin()) {
       this.cargarNotificaciones();
       setInterval(() => this.cargarNotificaciones(), ShellComponent._INTERVALO_NOTIFICACIONES_MS);

@@ -19,14 +19,16 @@ export class FincasComponent implements OnInit {
 	private readonly _svc   = inject(FincasService);
 	private readonly _tareasSvc = inject(TareasService);
 	private readonly _analisisSueloSvc = inject(AnalisisSueloService);
+	private readonly _authSvc = inject(AuthService);
 	private readonly _fb    = inject(FormBuilder);
-	protected readonly isAdmin = inject(AuthService).isAdmin;
+	protected readonly isAdmin = this._authSvc.isAdmin;
 
 	protected readonly fincas   = signal<Finca[]>([]);
 	protected readonly parcelas = signal<Parcela[]>([]);
 	protected readonly loading  = signal(false);
 	protected readonly saving   = signal(false);
 	protected readonly panelOpen    = signal(false);
+	protected readonly errorMsg     = signal<string | null>(null);
 	protected readonly editId       = signal<number | null>(null);
 	protected readonly panelMode    = signal<'finca' | 'parcela'>('finca');
 	protected readonly selectedFinca    = signal<Finca | null>(null);
@@ -82,8 +84,18 @@ export class FincasComponent implements OnInit {
 		});
 	}
 
+	protected openNewFinca(): void {
+		if (!this.isAdmin()) { return; }
+		this.errorMsg.set(null);
+		this.editId.set(null);
+		this.fincaForm.reset({ nombre: '', ubicacion: '', areaTotal: 0, costoTerreno: 0 });
+		this.panelMode.set('finca');
+		this.panelOpen.set(true);
+	}
+
 	protected openEditFinca(finca: Finca): void {
 		if (!this.isAdmin()) { return; }
+		this.errorMsg.set(null);
 		this.editId.set(finca.id);
 		this.fincaForm.setValue({
 			nombre: finca.nombre, ubicacion: finca.ubicacion,
@@ -232,17 +244,33 @@ export class FincasComponent implements OnInit {
 	}
 
 	protected saveFinca(): void {
-		const id = this.editId();
-		if (this.fincaForm.invalid || this.saving() || id === null) { return; }
+		if (this.fincaForm.invalid || this.saving()) { return; }
 		const raw = this.fincaForm.value;
 		const value = {
 			nombre: raw.nombre!, ubicacion: raw.ubicacion!,
 			areaTotal: Number(raw.areaTotal), costoTerreno: Number(raw.costoTerreno),
 		};
 		this.saving.set(true);
-		this._svc.update(id, value).subscribe({
-			next:  () => { this.saving.set(false); this.closePanel(); this.load(); },
-			error: () => this.saving.set(false),
+		const id = this.editId();
+		const esCreacion = id === null;
+		const req = esCreacion ? this._svc.create(value) : this._svc.update(id, value);
+		req.subscribe({
+			next:  () => {
+				this.saving.set(false);
+				this.closePanel();
+				if (esCreacion) {
+					// La finca recién creada no está en los claims del token de la sesión actual (se
+					// fijan al iniciar sesión) — el backend la filtraría como "sin acceso" si recargamos
+					// la lista con el token viejo. Reemitimos el token primero y solo entonces recargamos.
+					this._authSvc.refrescarToken().subscribe({
+						next: () => this.load(),
+						error: () => this.load(),
+					});
+				} else {
+					this.load();
+				}
+			},
+			error: err => { this.saving.set(false); this.errorMsg.set(err?.error?.error ?? 'No se pudo guardar la finca.'); },
 		});
 	}
 
@@ -270,6 +298,6 @@ export class FincasComponent implements OnInit {
 		if (this.panelMode() === 'parcela') {
 			return this.editParcelaId() ? 'Editar parcela' : 'Nueva parcela';
 		}
-		return 'Editar finca';
+		return this.editId() ? 'Editar finca' : 'Nueva finca';
 	}
 }

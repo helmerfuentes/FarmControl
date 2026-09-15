@@ -20,6 +20,10 @@ export class FincasService {
 		return this._http.get<Parcela[]>(`${this._base}/${fincaId}/parcelas`);
 	}
 
+	create(data: Omit<Finca, 'id'>) {
+		return this._http.post<Finca>(this._base, data);
+	}
+
 	update(id: number, data: Omit<Finca, 'id'>) {
 		return this._http.put<Finca>(`${this._base}/${id}`, data);
 	}
