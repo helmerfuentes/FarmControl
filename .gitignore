@@ -1,0 +1,13 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/FarmControlAPI/.vs/
+**/bin/
+**/obj/
+
+# SQLite database + backups (runtime data, not source)
+/FarmControlAPI/FarmControlAPI/*.db
+/FarmControlAPI/FarmControlAPI/*.db-shm
+/FarmControlAPI/FarmControlAPI/*.db-wal
+/FarmControlAPI/FarmControlAPI/Backups/
