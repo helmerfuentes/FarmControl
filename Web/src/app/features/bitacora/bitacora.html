@@ -1,0 +1,42 @@
+<div class="page">
+	<div class="page-header">
+		<div>
+			<h1>Bitácora</h1>
+			<p>Registro de quién hizo qué: altas de usuarios, cambios de acceso y contrato, y toda creación, edición o eliminación de registros (actividades, compras, ventas, procesos de cultivo, fincas, parcelas y catálogos).</p>
+		</div>
+		@if (!loading() && entradas().length > 0) {
+			<div class="page-actions">
+				<button class="btn btn-ghost" (click)="exportarCsv()">Exportar CSV</button>
+			</div>
+		}
+	</div>
+
+	@if (loading()) {
+		<fc-table-skeleton [rows]="8" [cols]="4" />
+	} @else if (entradas().length === 0) {
+		<fc-empty-state title="Todavía no hay actividad registrada." message="Las acciones sobre usuarios y accesos (crear, habilitar, deshabilitar) aparecerán aquí."></fc-empty-state>
+	} @else {
+		<div class="data-table-wrap cards-on-mobile">
+			<table class="data-table">
+				<thead>
+					<tr>
+						<th>Fecha</th>
+						<th>Quién</th>
+						<th>Acción</th>
+						<th>Detalle</th>
+					</tr>
+				</thead>
+				<tbody>
+					@for (e of entradas(); track e.id) {
+						<tr>
+							<td data-label="Fecha">{{ e.fechaHora | date:'dd/MM/yyyy HH:mm' }}</td>
+							<td class="text-muted" data-label="Quién">{{ e.actorNombre }}</td>
+							<td data-label="Acción"><strong>{{ e.accion }}</strong></td>
+							<td class="text-muted" data-label="Detalle">{{ e.detalle }}</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		</div>
+	}
+</div>

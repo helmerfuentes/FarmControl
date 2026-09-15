@@ -1,0 +1,35 @@
+// ── Skeleton de carga (shimmer) ───────────────────────────────────────────────
+@keyframes skeleton-shimmer {
+	0%   { background-position: -200px 0; }
+	100% { background-position: calc(200px + 100%) 0; }
+}
+
+.skel {
+	display: block;
+	border-radius: var(--radius-sm);
+	background: linear-gradient(90deg, var(--border-subtle) 25%, var(--surface-hover) 37%, var(--border-subtle) 63%);
+	background-size: 400px 100%;
+	animation: skeleton-shimmer 1.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.skel { animation: none; opacity: .6; }
+}
+
+// Fila genérica reutilizable (tabla o lista)
+.skel-row {
+	display: flex;
+	align-items: center;
+	gap: 1.5rem;
+	padding: .875rem 1rem;
+
+	& + .skel-row { border-top: 1px solid var(--border-subtle); }
+
+	.skel {
+		height: .8125rem;
+		flex: 1;
+	}
+
+	.skel:first-child { flex: 2; }
+	.skel:last-child { flex: 0 0 2.5rem; }
+}

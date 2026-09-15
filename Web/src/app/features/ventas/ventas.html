@@ -1,0 +1,318 @@
+<div class="page">
+	<div class="page-header">
+		<div>
+			<h1>Ventas</h1>
+			<p>Registra la venta de la producción de cada parcela (comprador, clasificación, cantidad y precio); alimenta el historial de precios y el reporte de utilidad por finca.</p>
+		</div>
+		<div class="page-actions">
+			<div class="total-chip">
+				Subtotal: <span class="val-money">{{ totalGlobal() | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
+			</div>
+			<button class="btn btn-ghost" (click)="toggleVistaCompradores()">
+				{{ vistaCompradores() ? 'Ver ventas' : 'Compradores frecuentes' }}
+			</button>
+			@if (isAdmin()) {
+				<button class="btn btn-primary" (click)="openNew()">
+					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+					Nueva venta
+				</button>
+			}
+		</div>
+	</div>
+
+	@if (deleteErrorMsg()) {
+		<p class="form-error">{{ deleteErrorMsg() }}</p>
+	}
+
+	@if (vistaCompradores()) {
+		@if (loadingCompradores()) {
+			<fc-table-skeleton [rows]="5" [cols]="4" />
+		} @else if (compradoresFrecuentes().length === 0) {
+			<fc-empty-state title="Aún no hay compradores con historial." message="Cuando registres ventas, aquí aparecerán los compradores más frecuentes con su volumen acumulado." />
+		} @else {
+			<div class="data-table-wrap cards-on-mobile">
+				<table class="data-table">
+					<thead>
+						<tr>
+							<th>Comprador</th>
+							<th># Ventas</th>
+							<th>Volumen total</th>
+							<th>Última venta</th>
+						</tr>
+					</thead>
+					<tbody>
+						@for (c of compradoresFrecuentes(); track c.compradorId) {
+							<tr>
+								<td data-label="Comprador"><strong>{{ c.compradorNombre }}</strong></td>
+								<td data-label="# Ventas">{{ c.numVentas }}</td>
+								<td class="val-money" data-label="Volumen total">{{ c.volumenTotal | currency:'COP':'symbol-narrow':'1.0-0' }}</td>
+								<td data-label="Última venta">{{ c.ultimaVenta | date:'dd/MM/yyyy' }}</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+		}
+	} @else if (loading()) {
+		<fc-table-skeleton [rows]="6" [cols]="5" />
+	} @else if (items().length === 0) {
+		<fc-empty-state title="No hay ventas registradas." message="Registra la venta de la producción de una parcela: comprador, clasificación, cantidad y precio.">
+			@if (isAdmin()) {
+				<button class="btn btn-primary" (click)="openNew()">Nueva venta</button>
+			}
+		</fc-empty-state>
+	} @else {
+		<app-table-controls
+			[total]="totalFiltered()"
+			[page]="page()"
+			[pageSize]="pageSize()"
+			(searchChange)="onSearch($event)"
+			(pageChange)="onPageChange($event)"
+			(pageSizeChange)="onPageSizeChange($event)" />
+		<div class="data-table-wrap cards-on-mobile">
+			<table class="data-table">
+				<thead>
+					<tr>
+						<th>Fecha</th>
+						<th>Finca / Parcela</th>
+						<th>Comprador</th>
+						<th>Transporte</th>
+						<th>Subtotal</th>
+						<th>Saldo pendiente</th>
+						<th></th>
+						@if (isAdmin()) { <th></th> }
+					</tr>
+				</thead>
+				<tbody>
+					@for (item of pageItems(); track item.id) {
+						<tr (click)="openView(item)">
+							<td data-label="Fecha">{{ item.fecha | date:'dd/MM/yyyy' }}</td>
+							<td data-label="Finca / Parcela">
+								<span class="text-muted">{{ item.fincaNombre }}</span><br>
+								<strong>{{ item.parcelaNombre }}</strong>
+							</td>
+							<td class="text-muted" data-label="Comprador">{{ item.compradorNombre }}</td>
+							<td class="val-money" data-label="Transporte">{{ item.valorTransporte | currency:'COP':'symbol-narrow':'1.0-0' }}</td>
+							<td class="val-money" data-label="Subtotal"><strong>{{ itemSubtotal(item) | currency:'COP':'symbol-narrow':'1.0-0' }}</strong></td>
+							<td data-label="Saldo pendiente">
+								@if ((item.saldoPendiente ?? 0) > 0) {
+									<span class="badge-saldo">{{ item.saldoPendiente | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
+								} @else {
+									<span class="badge-pagado">Pagado</span>
+								}
+							</td>
+							<td>
+								<button class="btn btn-icon btn-ghost" title="Recibo"
+									(click)="$event.stopPropagation(); imprimirRecibo(item)">
+									<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+										<path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6z"/>
+									</svg>
+								</button>
+							</td>
+							@if (isAdmin()) {
+								<td>
+									<div class="row-actions">
+										<button class="btn btn-icon btn-ghost" title="Eliminar"
+											(click)="$event.stopPropagation(); confirmDelete(item.id)">
+											<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+												<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>
+											</svg>
+										</button>
+									</div>
+								</td>
+							}
+						</tr>
+					}
+				</tbody>
+			</table>
+		</div>
+	}
+</div>
+
+<fc-drawer [title]="drawerTitle()" [open]="panelOpen()" [closeOnBackdrop]="false" (closed)="closePanel()">
+	<form [formGroup]="form" (ngSubmit)="save()">
+		<div class="form-group">
+			<label class="form-label">Parcela *</label>
+			<select class="form-control" formControlName="parcelaId"
+				(change)="onParcelaChange($any($event.target).value)">
+				<option value="0" disabled>Seleccionar parcela…</option>
+				@for (p of parcelasDeFincaActiva(); track p.id) {
+					<option [value]="p.id">{{ p.nombre }}</option>
+				}
+			</select>
+		</div>
+		<div class="form-group">
+			<label class="form-label">Producto</label>
+			@if (activeProcess()) {
+				<div class="form-control form-control-readonly">{{ activeProcess()!.productoNombre }}</div>
+			} @else if (noActiveProcess()) {
+				<div class="form-control form-control-warning">Sin proceso de cultivo activo para esta parcela</div>
+			} @else {
+				<div class="form-control form-control-placeholder">Seleccione una parcela primero</div>
+			}
+		</div>
+		<div class="form-group">
+			<label class="form-label">Comprador *</label>
+			<select class="form-control" formControlName="compradorId">
+				<option value="0" disabled>Seleccionar comprador…</option>
+				@for (c of compradores(); track c.id) {
+					<option [value]="c.id">{{ c.nombre }}</option>
+				}
+			</select>
+		</div>
+		<div class="form-group">
+			<label class="form-label">Fecha *</label>
+			<input class="form-control" type="date" formControlName="fecha">
+		</div>
+		<div class="form-group">
+			<label class="form-label">Valor transporte (COP)</label>
+			<input class="form-control" type="number" step="1000" formControlName="valorTransporte">
+		</div>
+
+		@if (detallesArray.length > 0) {
+			<div class="detalles-section" formArrayName="detalles">
+				<p class="form-label" style="margin-bottom:.75rem">Detalles por clasificación</p>
+				@for (det of detallesArray.controls; track $index) {
+					<div class="detalle-row" [formGroupName]="$index">
+						<div class="det-clasificacion">
+							<label class="form-label">{{ det.get('clasificacion')?.value }}</label>
+						</div>
+						<div class="det-campos">
+							<div class="form-group">
+								<label class="form-label">Unidad</label>
+								<input class="form-control" formControlName="unidadMedida" placeholder="Bulto, kg…">
+							</div>
+							<div class="form-group">
+								<label class="form-label">Cantidad</label>
+								<input class="form-control" type="number" step="1" formControlName="cantidad"
+									(input)="updateSubtotal($index)">
+							</div>
+							<div class="form-group">
+								<label class="form-label">Precio unit.</label>
+								<input class="form-control" type="number" step="1000" formControlName="precioUnitario"
+									(input)="updateSubtotal($index)">
+							</div>
+							<div class="form-group">
+								<label class="form-label">Subtotal</label>
+								<input class="form-control" formControlName="subtotal" readonly>
+							</div>
+						</div>
+					</div>
+				}
+				<div class="total-row">
+					<span>Subtotal:</span>
+					<span class="val-money">{{ totalVenta() | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
+				</div>
+			</div>
+		}
+
+		<div class="form-actions">
+			<button type="button" class="btn btn-ghost" (click)="closePanel()">Cancelar</button>
+			@if (!editId()) {
+				<button type="submit" class="btn btn-primary" [disabled]="form.invalid || saving()">
+					{{ saving() ? 'Guardando…' : 'Guardar venta' }}
+				</button>
+			}
+		</div>
+	</form>
+
+	@if (editId()) {
+		<div class="pagos-section">
+			<h3>Cuenta por cobrar</h3>
+			<div class="pagos-resumen">
+				<span>Saldo pendiente:</span>
+				<strong [class.saldo-cero]="saldoPendienteActual() <= 0">
+					{{ saldoPendienteActual() | currency:'COP':'symbol-narrow':'1.0-0' }}
+				</strong>
+			</div>
+
+			@if (loadingPagos()) {
+				<p class="text-muted">Cargando pagos…</p>
+			} @else if (pagos() && pagos()!.length > 0) {
+				<ul class="pagos-list">
+					@for (p of pagos(); track p.id) {
+						<li>
+							<span>{{ p.fecha | date:'dd/MM/yyyy' }}</span>
+							<span class="val-money">{{ p.monto | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
+							<span class="text-muted">{{ p.observacion }}</span>
+						</li>
+					}
+				</ul>
+			} @else {
+				<p class="text-muted">Aún no se han registrado pagos.</p>
+			}
+
+			@if (isAdmin() && saldoPendienteActual() > 0) {
+				<form [formGroup]="pagoForm" (ngSubmit)="registrarPago()" class="pago-form">
+					@if (pagoErrorMsg()) {
+						<p class="form-error">{{ pagoErrorMsg() }}</p>
+					}
+					<div class="pago-form-row">
+						<div class="form-group">
+							<label class="form-label">Monto</label>
+							<input class="form-control" type="number" step="1000" formControlName="monto">
+						</div>
+						<div class="form-group">
+							<label class="form-label">Fecha</label>
+							<input class="form-control" type="date" formControlName="fecha">
+						</div>
+					</div>
+					<div class="form-group">
+						<label class="form-label">Observación</label>
+						<input class="form-control" formControlName="observacion" placeholder="Opcional">
+					</div>
+					<button type="submit" class="btn btn-secondary" [disabled]="pagoForm.invalid || savingPago()">
+						{{ savingPago() ? 'Registrando…' : 'Registrar pago' }}
+					</button>
+				</form>
+			}
+		</div>
+
+		<fc-comentarios-panel tipoEntidad="Venta" [entidadId]="editId()!" />
+	}
+</fc-drawer>
+
+<fc-confirm-dialog
+	[open]="deleteId() !== null"
+	message="¿Eliminar esta venta y sus detalles?"
+	(confirmed)="doDelete()"
+	(cancelled)="cancelDelete()"/>
+
+@if (reciboVenta(); as r) {
+	<div class="recibo-imprimible">
+		<h1>Recibo de venta</h1>
+		<div class="recibo-datos">
+			<div><span>Comprador:</span> <strong>{{ r.compradorNombre }}</strong></div>
+			<div><span>Fecha:</span> <strong>{{ r.fecha | date:'dd/MM/yyyy' }}</strong></div>
+			<div><span>Finca / Parcela:</span> <strong>{{ r.fincaNombre }} — {{ r.parcelaNombre }}</strong></div>
+		</div>
+		<table class="recibo-tabla">
+			<thead>
+				<tr>
+					<th>Clasificación</th>
+					<th>Cantidad</th>
+					<th>Unidad</th>
+					<th>Precio unit.</th>
+					<th>Subtotal</th>
+				</tr>
+			</thead>
+			<tbody>
+				@for (d of r.detalles; track $index) {
+					<tr>
+						<td>{{ d.clasificacion }}</td>
+						<td>{{ d.cantidad }}</td>
+						<td>{{ d.unidadMedida }}</td>
+						<td>{{ d.precioUnitario | currency:'COP':'symbol-narrow':'1.0-0' }}</td>
+						<td>{{ d.subtotal | currency:'COP':'symbol-narrow':'1.0-0' }}</td>
+					</tr>
+				}
+			</tbody>
+		</table>
+		<div class="recibo-totales">
+			<div><span>Valor transporte:</span> <strong>{{ r.valorTransporte | currency:'COP':'symbol-narrow':'1.0-0' }}</strong></div>
+			<div><span>Total:</span> <strong>{{ itemSubtotal(r) | currency:'COP':'symbol-narrow':'1.0-0' }}</strong></div>
+			<div><span>Total pagado:</span> <strong>{{ r.totalPagado ?? 0 | currency:'COP':'symbol-narrow':'1.0-0' }}</strong></div>
+			<div><span>Saldo pendiente:</span> <strong>{{ r.saldoPendiente ?? 0 | currency:'COP':'symbol-narrow':'1.0-0' }}</strong></div>
+		</div>
+	</div>
+}

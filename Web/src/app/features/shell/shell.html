@@ -1,0 +1,280 @@
+<div class="shell" [class.sidebar-collapsed]="!sidebarOpen()" [class.mobile-nav-open]="mobileNavOpen()">
+
+  <!-- Topbar (solo móvil) -->
+  <div class="mobile-topbar">
+    <button class="mobile-menu-btn" (click)="toggleMobileNav()" aria-label="Abrir menú">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <path d="M4 6h16M4 12h16M4 18h16" stroke-linecap="round"/>
+      </svg>
+    </button>
+    <a [routerLink]="homePath()" class="mobile-brand">
+      <svg class="brand-icon" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect x="12" y="12" width="8" height="40" rx="2" fill="currentColor" opacity="0.9"/>
+        <rect x="20" y="12" width="28" height="8" rx="2" fill="currentColor" opacity="0.9"/>
+        <rect x="20" y="28" width="20" height="7" rx="2" fill="currentColor" opacity="0.6"/>
+        <line x1="36" y1="44" x2="52" y2="44" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.35"/>
+        <line x1="36" y1="49" x2="48" y2="49" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.2"/>
+      </svg>
+      <span>FarmControl</span>
+    </a>
+  </div>
+
+  <!-- Fondo oscuro al abrir el menú móvil -->
+  @if (mobileNavOpen()) {
+    <div class="mobile-backdrop" (click)="closeMobileNav()"></div>
+  }
+
+  <!-- Centro de notificaciones -->
+  @if (isAdmin()) {
+    <div class="notif-bell-wrap">
+      <button class="notif-bell-btn" (click)="toggleNotificaciones()" aria-label="Notificaciones">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+          <path d="M15 17h5l-1.4-1.4A2 2 0 0118 14.2V11a6 6 0 00-4-5.66V5a2 2 0 10-4 0v.34A6 6 0 006 11v3.2a2 2 0 01-.6 1.4L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        @if (notificaciones().length > 0) {
+          <span class="notif-badge">{{ notificaciones().length }}</span>
+        }
+      </button>
+
+      @if (notificacionesAbiertas()) {
+        <div class="notif-backdrop" (click)="cerrarNotificaciones()"></div>
+        <div class="notif-panel">
+          <div class="notif-panel-header">Notificaciones</div>
+          @if (notificaciones().length === 0) {
+            <p class="notif-empty">No tienes notificaciones nuevas.</p>
+          } @else {
+            <ul class="notif-list">
+              @for (n of notificaciones(); track n.titulo + n.mensaje) {
+                <li>
+                  <a [routerLink]="n.rutaDestino" (click)="cerrarNotificaciones(); closeMobileNav()">
+                    <strong>{{ n.titulo }}</strong>
+                    <span>{{ n.mensaje }}</span>
+                  </a>
+                </li>
+              }
+            </ul>
+          }
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Sidebar -->
+  <nav class="sidebar" [attr.aria-expanded]="sidebarOpen()">
+
+    <div class="sidebar-header">
+      <a [routerLink]="homePath()" class="brand-link">
+        <svg class="brand-icon" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <rect x="12" y="12" width="8" height="40" rx="2" fill="currentColor" opacity="0.9"/>
+          <rect x="20" y="12" width="28" height="8" rx="2" fill="currentColor" opacity="0.9"/>
+          <rect x="20" y="28" width="20" height="7" rx="2" fill="currentColor" opacity="0.6"/>
+          <line x1="36" y1="44" x2="52" y2="44" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.35"/>
+          <line x1="36" y1="49" x2="48" y2="49" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.2"/>
+        </svg>
+        <span class="brand-name">FarmControl</span>
+      </a>
+
+      <button class="sidebar-toggle" (click)="toggleSidebar(); closeMobileNav()" [attr.aria-label]="sidebarOpen() ? 'Colapsar menú' : 'Expandir menú'">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          @if (sidebarOpen()) {
+            <path d="M11 19l-7-7 7-7M18 19l-7-7 7-7"/>
+          } @else {
+            <path d="M13 5l7 7-7 7M6 5l7 7-7 7"/>
+          }
+        </svg>
+      </button>
+    </div>
+
+    @if (isSocio()) {
+      <div class="nav-section">
+        @for (item of socioNav; track item.path) {
+          <a
+            [routerLink]="item.path"
+            routerLinkActive="active"
+            class="nav-item"
+            [attr.title]="!sidebarOpen() ? item.label : null"
+            (click)="closeMobileNav()"
+          >
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+              <path [attr.d]="item.icon" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span class="nav-label">{{ item.label }}</span>
+          </a>
+        }
+      </div>
+    } @else if (isContador()) {
+      <div class="nav-section">
+        @for (item of contadorNav; track item.path) {
+          <a
+            [routerLink]="item.path"
+            routerLinkActive="active"
+            class="nav-item"
+            [attr.title]="!sidebarOpen() ? item.label : null"
+            (click)="closeMobileNav()"
+          >
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+              <path [attr.d]="item.icon" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span class="nav-label">{{ item.label }}</span>
+          </a>
+        }
+      </div>
+    } @else if (isJornalero()) {
+      <div class="nav-section">
+        @for (item of jornaleroNav; track item.path) {
+          <a
+            [routerLink]="item.path"
+            routerLinkActive="active"
+            class="nav-item"
+            [attr.title]="!sidebarOpen() ? item.label : null"
+            (click)="closeMobileNav()"
+          >
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+              <path [attr.d]="item.icon" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span class="nav-label">{{ item.label }}</span>
+          </a>
+        }
+      </div>
+    } @else if (isSuperAdmin()) {
+      <div class="nav-section">
+        <span class="nav-section-label">Plataforma</span>
+        @for (item of superAdminNav; track item.path) {
+          <a
+            [routerLink]="item.path"
+            routerLinkActive="active"
+            class="nav-item"
+            [attr.title]="!sidebarOpen() ? item.label : null"
+            (click)="closeMobileNav()"
+          >
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+              <path [attr.d]="item.icon" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span class="nav-label">{{ item.label }}</span>
+          </a>
+        }
+      </div>
+    } @else {
+      <div class="nav-section">
+        @for (item of inicioNav; track item.path) {
+          <a
+            [routerLink]="item.path"
+            routerLinkActive="active"
+            class="nav-item"
+            [attr.title]="!sidebarOpen() ? item.label : null"
+            (click)="closeMobileNav()"
+          >
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+              <path [attr.d]="item.icon" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span class="nav-label">{{ item.label }}</span>
+          </a>
+        }
+        @for (item of fincasNav; track item.path) {
+          <a
+            [routerLink]="item.path"
+            routerLinkActive="active"
+            class="nav-item"
+            [attr.title]="!sidebarOpen() ? item.label : null"
+            (click)="closeMobileNav()"
+          >
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+              <path [attr.d]="item.icon" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span class="nav-label">{{ item.label }}</span>
+          </a>
+        }
+      </div>
+
+      <div class="nav-section">
+        <span class="nav-section-label">Operaciones</span>
+
+        @if (fincaContext.requiereSelector()) {
+          <div class="finca-switcher">
+            <label class="finca-switcher-label" for="finca-select">Finca activa</label>
+            <select id="finca-select" class="finca-switcher-select" (change)="onSeleccionarFinca($event)">
+              @for (finca of fincasDisponibles(); track finca.id) {
+                <option [value]="finca.id" [selected]="finca.id === fincaContext.selectedFincaId()">{{ finca.nombre }}</option>
+              }
+            </select>
+          </div>
+        }
+
+        @for (item of opsNav; track item.path) {
+          <a
+            [routerLink]="item.path"
+            routerLinkActive="active"
+            class="nav-item"
+            [attr.title]="!sidebarOpen() ? item.label : null"
+            (click)="closeMobileNav()"
+          >
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+              <path [attr.d]="item.icon" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span class="nav-label">{{ item.label }}</span>
+          </a>
+        }
+      </div>
+
+      <div class="nav-section">
+        <span class="nav-section-label">Catálogos</span>
+        @for (item of catNav; track item.path) {
+          <a
+            [routerLink]="item.path"
+            routerLinkActive="active"
+            class="nav-item"
+            [attr.title]="!sidebarOpen() ? item.label : null"
+            (click)="closeMobileNav()"
+          >
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+              <path [attr.d]="item.icon" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span class="nav-label">{{ item.label }}</span>
+          </a>
+        }
+      </div>
+
+      @if (isAdmin()) {
+        <div class="nav-section">
+          <span class="nav-section-label">Administración</span>
+          @for (item of adminNav; track item.path) {
+            <a
+              [routerLink]="item.path"
+              routerLinkActive="active"
+              class="nav-item"
+              [attr.title]="!sidebarOpen() ? item.label : null"
+              (click)="closeMobileNav()"
+            >
+              <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                <path [attr.d]="item.icon" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <span class="nav-label">{{ item.label }}</span>
+            </a>
+          }
+        </div>
+      }
+    }
+
+    <div class="sidebar-footer">
+      <div class="user-info">
+        <div class="user-avatar" aria-hidden="true">{{ (usuario() ?? 'U')[0].toUpperCase() }}</div>
+        <div class="user-details">
+          <a [routerLink]="'/app/mi-cuenta'" class="user-name" title="Mi cuenta" (click)="closeMobileNav()">{{ usuario() }}</a>
+          <span class="user-role">{{ roleLabel() }}</span>
+        </div>
+      </div>
+      <button class="btn-logout" (click)="logout()" title="Cerrar sesión">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+          <path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </div>
+
+  </nav>
+
+  <!-- Main content -->
+  <div class="main">
+    <router-outlet/>
+  </div>
+
+</div>

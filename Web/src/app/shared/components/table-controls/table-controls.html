@@ -1,0 +1,25 @@
+<div class="tc-wrap">
+	<div class="tc-search">
+		<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+		<input type="search" class="tc-input" placeholder="Buscar…" (input)="onSearch($event)">
+	</div>
+	<div class="tc-pagination">
+		<span class="tc-count">{{ from }}–{{ to }} de {{ total() }}</span>
+		<div class="tc-pages">
+			<button class="tc-btn" [disabled]="page() === 1" (click)="goTo(page() - 1)" aria-label="Anterior">
+				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+			</button>
+			@for (p of pages; track p) {
+				<button class="tc-btn tc-page" [class.active]="p === page()" (click)="goTo(p)">{{ p }}</button>
+			}
+			<button class="tc-btn" [disabled]="page() === totalPages" (click)="goTo(page() + 1)" aria-label="Siguiente">
+				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+			</button>
+		</div>
+		<select class="tc-size" (change)="onPageSize($event)" [value]="pageSize()">
+			@for (s of pageSizes; track s) {
+				<option [value]="s">{{ s }} / pág</option>
+			}
+		</select>
+	</div>
+</div>

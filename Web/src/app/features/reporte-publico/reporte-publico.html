@@ -1,0 +1,66 @@
+<div class="reporte-publico-page">
+	@if (loading()) {
+		<p class="estado-msg">Cargando reporte…</p>
+	} @else if (error()) {
+		<div class="estado-msg estado-error">{{ error() }}</div>
+	} @else if (resumen(); as r) {
+		<div class="reporte-card">
+			<div class="reporte-header">
+				<span class="badge-solo-lectura">Reporte compartido · solo lectura</span>
+				<h1>{{ r.nombre }}</h1>
+				@if (r.ubicacion) {
+					<p class="ubicacion">{{ r.ubicacion }}</p>
+				}
+			</div>
+
+			<div class="kpi-grid">
+				<div class="kpi">
+					<span class="kpi-label">Área total</span>
+					<span class="kpi-val">{{ r.areaTotal | number:'1.2-2' }} ha</span>
+				</div>
+				<div class="kpi">
+					<span class="kpi-label">Ingresos</span>
+					<span class="kpi-val kpi-pos">{{ r.totalIngresos | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
+				</div>
+				<div class="kpi">
+					<span class="kpi-label">Compras / Gastos</span>
+					<span class="kpi-val">{{ r.totalCompras | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
+				</div>
+				<div class="kpi">
+					<span class="kpi-label">Mano de obra</span>
+					<span class="kpi-val">{{ r.totalManoObra | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
+				</div>
+				<div class="kpi" [class.kpi-negativo]="r.utilidad < 0">
+					<span class="kpi-label">Utilidad neta</span>
+					<span class="kpi-val" [class.kpi-neg]="r.utilidad < 0" [class.kpi-pos]="r.utilidad >= 0">
+						{{ r.utilidad | currency:'COP':'symbol-narrow':'1.0-0' }}
+					</span>
+				</div>
+			</div>
+
+			<div class="parcelas-card">
+				<div class="parcelas-header">
+					<span>Parcela</span>
+					<span>Producto</span>
+					<span class="col-r">Área (ha)</span>
+					<span class="col-r">Ingresos</span>
+					<span class="col-r">Mano de obra</span>
+				</div>
+				@for (p of r.parcelas; track p.id) {
+					<div class="parcela-row">
+						<span class="p-name">{{ p.nombre }}</span>
+						<span>{{ p.producto || '—' }}</span>
+						<span class="col-r">{{ p.area | number:'1.2-2' }}</span>
+						<span class="col-r">{{ p.totalIngresos | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
+						<span class="col-r">{{ p.totalManoObra | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
+					</div>
+				}
+				@empty {
+					<div class="empty-parcelas">Esta finca no tiene parcelas registradas.</div>
+				}
+			</div>
+
+			<p class="footer-nota">Generado por FarmControl. Este enlace es de solo lectura y puede expirar.</p>
+		</div>
+	}
+</div>

@@ -1,0 +1,74 @@
+.comentarios-panel {
+	margin-top: 1.5rem;
+	padding-top: 1.5rem;
+	border-top: 1px solid var(--border-color, #e5e7eb);
+}
+
+.comentarios-titulo {
+	font-size: 0.95rem;
+	font-weight: 600;
+	margin: 0 0 0.75rem;
+}
+
+.comentarios-loading,
+.comentarios-vacio {
+	font-size: 0.85rem;
+	color: var(--text-muted, #6b7280);
+}
+
+.comentarios-list {
+	list-style: none;
+	margin: 0 0 1rem;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+}
+
+.comentario-item {
+	background: var(--bg-subtle, #f9fafb);
+	border-radius: 0.5rem;
+	padding: 0.6rem 0.75rem;
+}
+
+.comentario-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: baseline;
+	gap: 0.5rem;
+	font-size: 0.8rem;
+}
+
+.comentario-fecha {
+	color: var(--text-muted, #6b7280);
+	font-size: 0.75rem;
+}
+
+.comentario-texto {
+	margin: 0.25rem 0 0;
+	font-size: 0.85rem;
+	white-space: pre-wrap;
+}
+
+.comentario-eliminar {
+	background: none;
+	border: none;
+	color: var(--danger, #dc2626);
+	font-size: 0.75rem;
+	cursor: pointer;
+	padding: 0.25rem 0 0;
+}
+
+.comentario-form {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+
+	textarea {
+		resize: vertical;
+	}
+
+	button {
+		align-self: flex-end;
+	}
+}

@@ -1,0 +1,267 @@
+.fincas-layout {
+	display: grid;
+	grid-template-columns: 280px 1fr;
+	height: calc(100vh - var(--shell-header-h, 0px));
+	overflow: hidden;
+
+	@media (max-width: 860px) {
+		grid-template-columns: 1fr;
+		height: auto;
+		overflow: visible;
+	}
+}
+
+.fincas-list-panel {
+	border-right: 1px solid var(--border);
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+
+	@media (max-width: 860px) {
+		border-right: none;
+		border-bottom: 1px solid var(--border);
+		max-height: 42vh;
+	}
+}
+
+.panel-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 1.25rem 1rem .875rem;
+	border-bottom: 1px solid var(--border-subtle);
+	flex-shrink: 0;
+
+	h1 {
+		font-family: var(--font-display);
+		font-size: var(--text-xl);
+		margin: 0 0 .25rem;
+	}
+
+	p {
+		color: var(--text-muted);
+		font-size: var(--text-sm);
+		margin: 0;
+	}
+}
+
+.btn-sm {
+	padding: .375rem .75rem;
+	font-size: var(--text-xs);
+}
+
+.btn-xs {
+	width: 1.75rem;
+	height: 1.75rem;
+
+	svg { width: .875rem; height: .875rem; }
+}
+
+.list-loading,
+.list-empty {
+	padding: 1.5rem 1.25rem;
+	color: var(--text-dim);
+	font-size: var(--text-sm);
+}
+
+.finca-list {
+	list-style: none;
+	overflow-y: auto;
+	flex: 1;
+}
+
+.finca-item {
+	position: relative;
+	padding: 1rem 1.25rem;
+	cursor: pointer;
+	border-bottom: 1px solid var(--border-subtle);
+	transition: background var(--transition-fast);
+
+	&:hover { background: var(--surface-hover); }
+
+	&.selected {
+		background: var(--accent-dim);
+		border-left: 3px solid var(--accent);
+		padding-left: calc(1.25rem - 3px);
+	}
+}
+
+.finca-item-name {
+	font-weight: 600;
+	font-size: var(--text-sm);
+	margin-bottom: .2rem;
+}
+
+.finca-item-meta {
+	font-size: var(--text-xs);
+	color: var(--text-muted);
+}
+
+.finca-item-area {
+	font-size: var(--text-xs);
+	color: var(--text-dim);
+	margin-top: .2rem;
+}
+
+.finca-item-actions {
+	position: absolute;
+	right: .75rem;
+	top: 50%;
+	transform: translateY(-50%);
+	display: flex;
+	gap: .25rem;
+	opacity: 0;
+	transition: opacity var(--transition-fast);
+
+	.finca-item:hover & { opacity: 1; }
+}
+
+// ── Detail panel ──
+.finca-detail-panel {
+	padding: 2rem 2.5rem;
+	overflow-y: auto;
+
+	@media (max-width: 860px) {
+		padding: 1.25rem 1rem;
+	}
+}
+
+.detail-header {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 1rem;
+	margin-bottom: 2rem;
+	padding-bottom: 1.5rem;
+	border-bottom: 1px solid var(--border-subtle);
+
+	h2 {
+		font-family: var(--font-display);
+		font-size: var(--text-2xl);
+		margin: 0 0 .25rem;
+	}
+
+	@media (max-width: 480px) {
+		flex-direction: column;
+	}
+}
+
+.detail-stats {
+	display: flex;
+	gap: 1.5rem;
+	flex-shrink: 0;
+
+	@media (max-width: 480px) {
+		gap: 1.25rem;
+	}
+}
+
+.stat {
+	text-align: right;
+
+	.stat-value {
+		display: block;
+		font-family: var(--font-display);
+		font-size: var(--text-xl);
+		font-weight: 600;
+		font-variant-numeric: tabular-nums;
+	}
+
+	.stat-label {
+		display: block;
+		font-size: var(--text-xs);
+		color: var(--text-muted);
+		text-transform: uppercase;
+		letter-spacing: .05em;
+	}
+}
+
+.parcelas-section { }
+
+.section-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 1rem;
+
+	h3 {
+		font-family: var(--font-display);
+		font-size: var(--text-lg);
+		margin: 0;
+	}
+}
+
+// ── Empty placeholder ──
+.finca-placeholder {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 1rem;
+	color: var(--text-dim);
+
+	svg {
+		width: 4rem;
+		height: 4rem;
+		opacity: .4;
+	}
+
+	p {
+		font-size: var(--text-sm);
+	}
+}
+
+.tareas-section {
+	padding: .75rem 1rem;
+	background: var(--surface);
+	border-radius: var(--radius-sm);
+}
+
+.tareas-list {
+	list-style: none;
+	margin: 0 0 .75rem;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+	gap: .5rem;
+}
+
+.tarea-item {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: .75rem;
+	padding: .5rem .75rem;
+	background: var(--surface-raised);
+	border: 1px solid var(--border);
+	border-radius: var(--radius-sm);
+
+	&.inactiva {
+		opacity: .6;
+	}
+}
+
+.tarea-info {
+	display: flex;
+	flex-direction: column;
+	gap: .15rem;
+	font-size: var(--text-sm);
+}
+
+.tarea-actions {
+	display: flex;
+	align-items: center;
+	gap: .25rem;
+	flex-shrink: 0;
+}
+
+.tarea-form {
+	display: flex;
+	flex-wrap: wrap;
+	gap: .5rem;
+	align-items: center;
+
+	.form-control {
+		flex: 1 1 140px;
+	}
+}

@@ -1,0 +1,13 @@
+.page {
+	padding: 2rem 2.5rem;
+	max-width: 900px;
+
+	@media (max-width: 640px) {
+		padding: 1.25rem 1rem;
+	}
+}
+
+.col-desc {
+	color: var(--text-muted);
+	max-width: 400px;
+}

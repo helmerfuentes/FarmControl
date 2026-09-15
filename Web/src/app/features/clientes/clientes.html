@@ -1,0 +1,469 @@
+<div class="clientes-page">
+	<div class="page-header">
+		<div>
+			<h1>Clientes</h1>
+			<p>Da de alta clientes con sus fincas contratadas y su primer usuario administrador; gestiona el acceso a cada finca y habilita o deshabilita usuarios existentes.</p>
+		</div>
+		<div class="page-header-actions">
+			<button class="btn btn-ghost btn-sm" (click)="openPlanesPanel()">
+				Gestionar planes
+			</button>
+			<button class="btn btn-primary btn-sm" (click)="openWizard()">
+				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+					<path d="M12 5v14M5 12h14"/>
+				</svg>
+				Nuevo cliente
+			</button>
+		</div>
+	</div>
+
+	@if (loadingSalud()) {
+		<div class="list-loading">Cargando salud del sistema…</div>
+	} @else if (salud(); as s) {
+		<div class="salud-panel">
+			<div class="salud-stat">
+				<span class="salud-stat-label">Clientes</span>
+				<span class="salud-stat-value">{{ s.totalClientes }}</span>
+				<span class="text-muted">{{ s.clientesActivos }} activos</span>
+			</div>
+			<div class="salud-stat">
+				<span class="salud-stat-label">Fincas</span>
+				<span class="salud-stat-value">{{ s.totalFincas }}</span>
+			</div>
+			<div class="salud-stat">
+				<span class="salud-stat-label">Personas</span>
+				<span class="salud-stat-value">{{ s.totalPersonas }}</span>
+			</div>
+			<div class="salud-stat">
+				<span class="salud-stat-label">Parcelas</span>
+				<span class="salud-stat-value">{{ s.totalParcelas }}</span>
+			</div>
+			<div class="salud-stat">
+				<span class="salud-stat-label">Base de datos</span>
+				<span class="salud-stat-value">{{ tamanoBaseDatosMb() }} MB</span>
+			</div>
+		</div>
+	}
+
+	@if (loading()) {
+		<div class="list-loading">Cargando…</div>
+	} @else if (clientes().length === 0) {
+		<div class="list-empty">No hay clientes registrados.</div>
+	} @else {
+		<div class="data-table-wrap">
+			<table class="data-table">
+				<thead>
+					<tr>
+						<th>Razón social</th>
+						<th>NIT</th>
+						<th>Email</th>
+						<th>Estado del contrato</th>
+						<th>Plan</th>
+						<th></th>
+					</tr>
+				</thead>
+				<tbody>
+					@for (c of clientes(); track c.id) {
+						<tr (click)="verGestion(c)">
+							<td>
+								{{ c.razonSocial }}
+								@if (onboardingIncompleto(c)) {
+									<span class="badge badge-estado-por-vencer" title="Faltan fincas o el usuario inicial">Alta incompleta</span>
+								}
+							</td>
+							<td>{{ c.nit }}</td>
+							<td>{{ c.email }}</td>
+							<td><span [class]="estadoContrato(c).className">{{ estadoContrato(c).label }}</span></td>
+							<td>
+								{{ c.planNombre ?? 'Sin plan' }}
+								@if (c.planNombre) {
+									<div class="text-muted">
+										Fincas: {{ c.numFincas }}{{ c.maxFincas !== null && c.maxFincas !== -1 ? '/' + c.maxFincas : '' }} ·
+										Usuarios: {{ c.numUsuarios }}{{ c.maxUsuarios !== null && c.maxUsuarios !== -1 ? '/' + c.maxUsuarios : '' }}
+									</div>
+								}
+							</td>
+							<td>
+								@if (onboardingIncompleto(c)) {
+									<button class="btn btn-ghost btn-sm" (click)="continuarAlta(c, $event)">
+										Continuar alta
+									</button>
+								}
+								<button class="btn btn-ghost btn-sm" title="Exportar datos completos del cliente"
+									(click)="exportarCliente(c, $event)">
+									Exportar datos
+								</button>
+							</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		</div>
+	}
+</div>
+
+<fc-drawer title="Nuevo cliente" [open]="panelOpen()" (closed)="closePanel()">
+	<div class="wizard-steps">
+		<span class="wizard-step" [class.active]="step() === 1" [class.done]="step() > 1">1. Cliente</span>
+		<span class="wizard-step" [class.active]="step() === 2" [class.done]="step() > 2">2. Fincas</span>
+		<span class="wizard-step" [class.active]="step() === 3" [class.done]="step() > 3">3. Usuario</span>
+		<span class="wizard-step" [class.active]="step() === 4">4. Resumen</span>
+	</div>
+
+	@if (errorMsg()) {
+		<p class="form-error">{{ errorMsg() }}</p>
+	}
+
+	@if (step() === 1) {
+		<form [formGroup]="clienteForm" (ngSubmit)="guardarCliente()">
+			<div class="form-group">
+				<label class="form-label">Razón social *</label>
+				<input class="form-control" formControlName="razonSocial" placeholder="Ej: AgroTest S.A.">
+			</div>
+			<div class="form-group">
+				<label class="form-label">NIT *</label>
+				<input class="form-control" formControlName="nit">
+			</div>
+			<div class="form-group">
+				<label class="form-label">Email *</label>
+				<input class="form-control" type="email" formControlName="email">
+			</div>
+			<div class="form-group">
+				<label class="form-label">Teléfono</label>
+				<input class="form-control" formControlName="telefono">
+			</div>
+			<div class="form-group">
+				<label class="form-label">Vencimiento del contrato</label>
+				<input class="form-control" type="date" formControlName="fechaVencimientoContrato">
+				<span class="form-hint">Opcional. Déjalo vacío si el contrato no tiene fecha de vencimiento definida.</span>
+			</div>
+			<div class="form-group">
+				<label class="form-label">Plan</label>
+				<select class="form-control" formControlName="planId">
+					<option value="">Sin plan (sin límites)</option>
+					@for (p of planes(); track p.id) {
+						<option [value]="p.id">{{ p.nombre }}</option>
+					}
+				</select>
+			</div>
+			<div class="form-actions">
+				<button type="button" class="btn btn-ghost" (click)="closePanel()">Cancelar</button>
+				<button type="submit" class="btn btn-primary" [disabled]="clienteForm.invalid || saving()">
+					{{ saving() ? 'Guardando…' : 'Continuar' }}
+				</button>
+			</div>
+		</form>
+	}
+
+	@if (step() === 2) {
+		<p class="text-muted">Registra cada finca contratada por {{ clienteCreado()?.razonSocial }}.</p>
+
+		@if (fincasCreadas().length > 0) {
+			<ul class="finca-agregada-list">
+				@for (f of fincasCreadas(); track f.id) {
+					<li>{{ f.nombre }} — {{ f.areaTotal }} ha</li>
+				}
+			</ul>
+		}
+
+		<form [formGroup]="fincaForm" (ngSubmit)="agregarFinca()">
+			<div class="form-group">
+				<label class="form-label">Nombre *</label>
+				<input class="form-control" formControlName="nombre" placeholder="Ej: Finca A">
+			</div>
+			<div class="form-group">
+				<label class="form-label">Ubicación</label>
+				<input class="form-control" formControlName="ubicacion">
+			</div>
+			<div class="form-group">
+				<label class="form-label">Área total (ha) *</label>
+				<input class="form-control" type="number" step="0.1" formControlName="areaTotal">
+			</div>
+			<div class="form-group">
+				<label class="form-label">Costo del terreno *</label>
+				<input class="form-control" type="number" step="1000" formControlName="costoTerreno">
+			</div>
+			<div class="form-actions">
+				<button type="submit" class="btn btn-ghost" [disabled]="fincaForm.invalid || saving()">
+					{{ saving() ? 'Guardando…' : 'Agregar finca' }}
+				</button>
+			</div>
+		</form>
+
+		<div class="form-actions">
+			<button type="button" class="btn btn-primary" [disabled]="fincasCreadas().length === 0" (click)="irAPasoUsuario()">
+				Continuar
+			</button>
+		</div>
+	}
+
+	@if (step() === 3) {
+		<p class="text-muted">Crea el usuario administrador de {{ clienteCreado()?.razonSocial }}. Tendrá acceso a todas sus fincas registradas ({{ fincasCreadas().length }}).</p>
+
+		<form [formGroup]="usuarioForm" (ngSubmit)="guardarUsuario()">
+			<div class="form-group">
+				<label class="form-label">Nombre *</label>
+				<input class="form-control" formControlName="nombre">
+			</div>
+			<div class="form-group">
+				<label class="form-label">Documento *</label>
+				<input class="form-control" formControlName="documento">
+			</div>
+			<div class="form-group">
+				<label class="form-label">Teléfono *</label>
+				<input class="form-control" formControlName="telefono">
+			</div>
+			<div class="form-group">
+				<label class="form-label">Email</label>
+				<input class="form-control" type="email" formControlName="email">
+			</div>
+			<div class="form-group">
+				<label class="form-label">Usuario de acceso *</label>
+				<input class="form-control" formControlName="nombreUsuario">
+			</div>
+			<div class="form-group">
+				<label class="form-label">Contraseña *</label>
+				<input class="form-control" type="password" formControlName="contrasena">
+			</div>
+			<div class="form-group">
+				<label class="form-label">Nivel de acceso (aplica a todas sus fincas) *</label>
+				<select class="form-control" [value]="nivelAccesoWizard()" (change)="nivelAccesoWizard.set($any($event.target).value)">
+					<option value="lectura">Solo lectura</option>
+					<option value="escritura">Lectura y escritura</option>
+					<option value="total">Lectura, escritura y eliminación</option>
+				</select>
+			</div>
+			<div class="form-actions">
+				<button type="submit" class="btn btn-primary" [disabled]="usuarioForm.invalid || saving()">
+					{{ saving() ? 'Guardando…' : 'Finalizar' }}
+				</button>
+			</div>
+		</form>
+	}
+
+	@if (step() === 4) {
+		<div class="resumen-alta">
+			<p class="text-muted">Alta completada. Resumen:</p>
+			<h3>{{ clienteCreado()?.razonSocial }}</h3>
+			<p><strong>NIT:</strong> {{ clienteCreado()?.nit }}</p>
+			<p><strong>Fincas registradas:</strong></p>
+			<ul class="finca-agregada-list">
+				@for (f of fincasCreadas(); track f.id) {
+					<li>{{ f.nombre }}</li>
+				}
+			</ul>
+			@if (usuarioCreadoNombre()) {
+				<p><strong>Usuario inicial:</strong> {{ usuarioCreadoNombre() }}</p>
+				<p class="text-muted">Comparte estas credenciales con el cliente por un canal seguro fuera del sistema.</p>
+			}
+			<div class="form-actions">
+				<button type="button" class="btn btn-primary" (click)="finalizarWizard()">Cerrar</button>
+			</div>
+		</div>
+	}
+</fc-drawer>
+
+<fc-drawer title="Planes de suscripción" [open]="panelPlanesOpen()" (closed)="closePlanesPanel()">
+	@if (planErrorMsg()) {
+		<p class="form-error">{{ planErrorMsg() }}</p>
+	}
+
+	@if (planes().length > 0) {
+		<ul class="finca-agregada-list">
+			@for (p of planes(); track p.id) {
+				<li>
+					<strong>{{ p.nombre }}</strong> —
+					fincas: {{ p.maxFincas === -1 ? 'sin límite' : p.maxFincas }},
+					usuarios: {{ p.maxUsuarios === -1 ? 'sin límite' : p.maxUsuarios }}
+					<button type="button" class="btn btn-ghost btn-sm" (click)="editarPlan(p)">Editar</button>
+					<button type="button" class="btn btn-ghost btn-sm" (click)="eliminarPlan(p)">Eliminar</button>
+				</li>
+			}
+		</ul>
+	}
+
+	<h3>{{ editingPlanId() ? 'Editar plan' : 'Nuevo plan' }}</h3>
+	<form [formGroup]="planForm" (ngSubmit)="guardarPlan()">
+		<div class="form-group">
+			<label class="form-label">Nombre *</label>
+			<input class="form-control" formControlName="nombre">
+		</div>
+		<div class="form-group">
+			<label class="form-label">Descripción</label>
+			<input class="form-control" formControlName="descripcion">
+		</div>
+		<div class="form-group">
+			<label class="form-label">Máximo de fincas *</label>
+			<input class="form-control" type="number" formControlName="maxFincas">
+			<span class="form-hint">-1 = sin límite</span>
+		</div>
+		<div class="form-group">
+			<label class="form-label">Máximo de usuarios *</label>
+			<input class="form-control" type="number" formControlName="maxUsuarios">
+			<span class="form-hint">-1 = sin límite</span>
+		</div>
+		<div class="form-actions">
+			<button type="submit" class="btn btn-primary" [disabled]="planForm.invalid || savingPlan()">
+				{{ savingPlan() ? 'Guardando…' : (editingPlanId() ? 'Actualizar plan' : 'Crear plan') }}
+			</button>
+		</div>
+	</form>
+</fc-drawer>
+
+<fc-drawer title="Gestionar {{ clienteGestion()?.razonSocial }}" [open]="clienteGestion() !== null" (closed)="cerrarGestion()">
+	@if (errorMsg()) {
+		<p class="form-error">{{ errorMsg() }}</p>
+	}
+
+	<h3>Contrato</h3>
+	<p class="text-muted">
+		Estado actual:
+		<span [class]="estadoContrato(clienteGestion()!).className">{{ estadoContrato(clienteGestion()!).label }}</span>
+	</p>
+	<form [formGroup]="contratoForm" (ngSubmit)="guardarContrato()">
+		<div class="form-group">
+			<label class="form-label">Vencimiento del contrato</label>
+			<input class="form-control" type="date" formControlName="fechaVencimientoContrato">
+		</div>
+		<label class="checkbox-row">
+			<input type="checkbox" formControlName="activo">
+			Cliente activo (desmarcarlo bloquea el inicio de sesión de todos sus usuarios)
+		</label>
+		<div class="form-actions">
+			<button type="submit" class="btn btn-ghost" [disabled]="saving()">
+				{{ saving() ? 'Guardando…' : 'Guardar contrato' }}
+			</button>
+		</div>
+	</form>
+
+	<h3>Plan</h3>
+	<div class="form-group">
+		<label class="form-label">Plan asignado</label>
+		<select class="form-control" [value]="clienteGestion()?.planId ?? ''"
+			(change)="onCambiarPlanCliente($any($event.target).value)">
+			<option value="">Sin plan (sin límites)</option>
+			@for (p of planes(); track p.id) {
+				<option [value]="p.id">{{ p.nombre }}</option>
+			}
+		</select>
+		@if (clienteGestion()?.planNombre) {
+			<span class="form-hint">
+				Fincas: {{ clienteGestion()?.numFincas }}{{ clienteGestion()?.maxFincas !== -1 ? '/' + clienteGestion()?.maxFincas : '' }} ·
+				Usuarios: {{ clienteGestion()?.numUsuarios }}{{ clienteGestion()?.maxUsuarios !== -1 ? '/' + clienteGestion()?.maxUsuarios : '' }}
+			</span>
+		}
+	</div>
+
+	<h3>Fincas contratadas</h3>
+
+	@if (fincasCliente().length > 0) {
+		<ul class="finca-agregada-list">
+			@for (f of fincasCliente(); track f.id) {
+				<li>{{ f.nombre }}</li>
+			}
+		</ul>
+	}
+
+	<form [formGroup]="nuevaFincaGestionForm" (ngSubmit)="agregarFincaAlCliente()">
+		<div class="form-group">
+			<label class="form-label">Nombre *</label>
+			<input class="form-control" formControlName="nombre" placeholder="Ej: Finca C">
+		</div>
+		<div class="form-group">
+			<label class="form-label">Ubicación</label>
+			<input class="form-control" formControlName="ubicacion">
+		</div>
+		<div class="form-group">
+			<label class="form-label">Área total (ha) *</label>
+			<input class="form-control" type="number" step="0.1" formControlName="areaTotal">
+		</div>
+		<div class="form-group">
+			<label class="form-label">Costo del terreno *</label>
+			<input class="form-control" type="number" step="1000" formControlName="costoTerreno">
+		</div>
+		<div class="form-actions">
+			<button type="submit" class="btn btn-ghost" [disabled]="nuevaFincaGestionForm.invalid || saving()">
+				{{ saving() ? 'Guardando…' : 'Agregar finca' }}
+			</button>
+		</div>
+	</form>
+
+	<h3>Nuevo usuario</h3>
+	<p class="text-muted">Tendrá acceso a todas las fincas de este cliente ({{ fincasCliente().length }}).</p>
+
+	<form [formGroup]="nuevoUsuarioGestionForm" (ngSubmit)="crearUsuarioGestion()">
+		<div class="form-group">
+			<label class="form-label">Nombre *</label>
+			<input class="form-control" formControlName="nombre">
+		</div>
+		<div class="form-group">
+			<label class="form-label">Documento *</label>
+			<input class="form-control" formControlName="documento">
+		</div>
+		<div class="form-group">
+			<label class="form-label">Teléfono *</label>
+			<input class="form-control" formControlName="telefono">
+		</div>
+		<div class="form-group">
+			<label class="form-label">Email</label>
+			<input class="form-control" type="email" formControlName="email">
+		</div>
+		<div class="form-group">
+			<label class="form-label">Usuario de acceso *</label>
+			<input class="form-control" formControlName="nombreUsuario">
+		</div>
+		<div class="form-group">
+			<label class="form-label">Contraseña *</label>
+			<input class="form-control" type="password" formControlName="contrasena">
+		</div>
+		<div class="form-group">
+			<label class="form-label">Nivel de acceso (aplica a todas sus fincas) *</label>
+			<select class="form-control" [value]="nivelAccesoGestion()" (change)="nivelAccesoGestion.set($any($event.target).value)">
+				<option value="lectura">Solo lectura</option>
+				<option value="escritura">Lectura y escritura</option>
+				<option value="total">Lectura, escritura y eliminación</option>
+			</select>
+		</div>
+		<div class="form-actions">
+			<button type="submit" class="btn btn-ghost" [disabled]="nuevoUsuarioGestionForm.invalid || saving()">
+				{{ saving() ? 'Guardando…' : 'Crear usuario' }}
+			</button>
+		</div>
+	</form>
+
+	<h3>Usuarios</h3>
+
+	@if (cargandoUsuarios()) {
+		<div class="list-loading">Cargando…</div>
+	} @else if (usuariosDelCliente().length === 0) {
+		<div class="list-empty">Este cliente aún no tiene usuarios.</div>
+	} @else {
+		@for (p of usuariosDelCliente(); track p.id) {
+			<div class="usuario-card">
+				<div class="usuario-card-header">
+					<div>
+						<strong>{{ p.nombre }}</strong>
+						<span class="text-muted"> — {{ p.nombreUsuario }}</span>
+					</div>
+					<label class="checkbox-row">
+						<input type="checkbox" [checked]="p.activo" (change)="toggleUsuarioActivo(p)">
+						{{ p.activo ? 'Habilitado' : 'Deshabilitado (solo lectura en todas sus fincas)' }}
+					</label>
+				</div>
+				<ul class="acceso-finca-list">
+					@for (acceso of p.fincas; track acceso.fincaId) {
+						<li>
+							<span>{{ acceso.fincaNombre }}</span>
+							<select class="form-control nivel-select" [value]="nivelAccesoDesde(acceso)"
+								(change)="onCambiarNivelAcceso(p.id, acceso.fincaId, $any($event.target).value)">
+								<option value="lectura">Solo lectura</option>
+								<option value="escritura">Lectura y escritura</option>
+								<option value="total">Lectura, escritura y eliminación</option>
+							</select>
+						</li>
+					}
+				</ul>
+			</div>
+		}
+	}
+</fc-drawer>

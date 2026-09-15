@@ -1,0 +1,89 @@
+// ── FarmControl Design Tokens ─────────────────────────────────────────────────
+// Paleta "Pasto y Cielo": sidebar = borde del campo (verde-campo #14532D),
+// contenido = cielo abierto (blanco puro). Verde saturado con raíces terrosas.
+
+:root {
+  // Fondos
+  --bg:              #FFFFFF;
+  --surface:         #F0FDF4;   // Green 50 — casi imperceptible
+  --surface-raised:  #FFFFFF;
+  --surface-hover:   #DCFCE7;   // Green 100
+  --sidebar-bg:      #14532D;   // Green 900 — borde del campo
+
+  // Bordes
+  --border:          #BBF7D0;   // Green 200
+  --border-subtle:   #DCFCE7;   // Green 100
+
+  // Acento principal — verde vivo de campo (legible sobre blanco)
+  --accent:          #16A34A;   // Green 600
+  --accent-dim:      rgba(22, 163, 74, 0.10);
+  --accent-glow:     rgba(22, 163, 74, 0.20);
+
+  // Acento sidebar — marca activa sobre fondo oscuro
+  --accent-sidebar:  #4ADE80;   // Green 400
+
+  // Acento dorado — SOLO para datos financieros
+  --gold:            #C9943A;
+  --gold-dim:        rgba(201, 148, 58, 0.12);
+
+  // Texto (contexto fondo blanco)
+  --text:            #052e16;   // Green 950 — verde casi negro
+  --text-muted:      #166534;   // Green 800
+  --text-dim:        #4B7A52;   // placeholder legible
+
+  // Texto sidebar (sobre fondo oscuro #14532D)
+  --sidebar-text:       #ECFDF5;  // Green 50 — blanco-verde
+  --sidebar-text-muted: #A7F3D0;  // Green 200
+  --sidebar-text-dim:   #6EE7B7;  // Green 300
+
+  // Estado
+  --success:         #16A34A;
+  --warning:         #C9943A;
+  --error:           #DC2626;
+  --error-dim:       rgba(220, 38, 38, 0.10);
+
+  // Tipografía
+  --font-display:    'Crimson Pro', Georgia, serif;
+  --font-body:       'Inter', system-ui, sans-serif;
+
+  // Escala tipográfica
+  --text-xs:   0.75rem;   // 12px
+  --text-sm:   0.875rem;  // 14px
+  --text-base: 1rem;      // 16px
+  --text-lg:   1.125rem;  // 18px
+  --text-xl:   1.25rem;   // 20px
+  --text-2xl:  1.5rem;    // 24px
+  --text-3xl:  1.875rem;  // 30px
+  --text-4xl:  2.25rem;   // 36px
+
+  // Espaciado (escala 4px)
+  --space-1:  0.25rem;
+  --space-2:  0.5rem;
+  --space-3:  0.75rem;
+  --space-4:  1rem;
+  --space-5:  1.25rem;
+  --space-6:  1.5rem;
+  --space-8:  2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+
+  // Radio
+  --radius-sm:  4px;
+  --radius-md:  8px;
+  --radius-lg:  12px;
+
+  // Sombras (más suaves sobre blanco)
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.12);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.18);
+
+  // Sidebar
+  --sidebar-width:          220px;
+  --sidebar-collapsed-width: 60px;
+
+  // Transiciones
+  --transition-fast:   150ms ease;
+  --transition-base:   200ms ease;
+  --transition-slow:   300ms ease;
+}

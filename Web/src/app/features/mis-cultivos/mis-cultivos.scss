@@ -1,0 +1,28 @@
+.mis-cultivos-empty {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 1rem;
+	padding: 4rem 2rem;
+	color: var(--text-muted);
+
+	p {
+		font-size: 0.9375rem;
+	}
+}
+
+.badge-activo {
+	background: color-mix(in srgb, var(--accent) 15%, transparent);
+	color: var(--accent);
+}
+
+.badge-cosechado {
+	background: color-mix(in srgb, var(--gold) 15%, transparent);
+	color: var(--gold);
+}
+
+.badge-cerrado {
+	background: color-mix(in srgb, var(--text-muted) 15%, transparent);
+	color: var(--text-muted);
+}

@@ -1,0 +1,248 @@
+<!-- ── Nav ──────────────────────────────────────────────────────────── -->
+<nav class="lp-nav" id="fc-nav">
+	<a class="lp-logo" href="#inicio"><strong>Farm</strong>Control</a>
+	<ul class="lp-nav-links">
+		<li><a href="#funcionalidades">Funcionalidades</a></li>
+		<li><a href="#planes">Planes</a></li>
+		<li><a href="#contacto">Contacto</a></li>
+		<li><button class="lp-btn-ingresar" (click)="openModal()">Ingresar</button></li>
+	</ul>
+	<button class="lp-nav-burger" (click)="toggleMobileMenu()" [attr.aria-expanded]="mobileMenuOpen()" aria-label="Abrir menú">
+		<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+			@if (mobileMenuOpen()) {
+				<path d="M6 6l12 12M6 18L18 6"/>
+			} @else {
+				<path d="M4 7h16M4 12h16M4 17h16"/>
+			}
+		</svg>
+	</button>
+</nav>
+
+@if (mobileMenuOpen()) {
+	<div class="lp-mobile-menu">
+		<a href="#funcionalidades" (click)="closeMobileMenu()">Funcionalidades</a>
+		<a href="#planes" (click)="closeMobileMenu()">Planes</a>
+		<a href="#contacto" (click)="closeMobileMenu()">Contacto</a>
+		<button class="lp-btn-ingresar" (click)="openModal()">Ingresar</button>
+	</div>
+}
+
+<!-- ── Hero ───────────────────────────────────────────────────────────── -->
+<section class="lp-hero" id="inicio">
+	<div class="lp-hero-inner">
+		<span class="lp-eyebrow">Software agrícola colombiano</span>
+
+		<div class="lp-headline">
+			<span class="lp-w1">CONTROLA</span>
+			<span class="lp-w2">TU</span>
+			<span class="lp-w3">FINCA.</span>
+		</div>
+
+		<p class="lp-hero-sub">
+			Registra cultivos, compras, ventas y actividades en un solo lugar.
+			Sin hojas de cálculo, sin cuadernos perdidos.
+		</p>
+
+		<button class="lp-hero-cta" (click)="openModal()">
+			Comenzar ahora
+			<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+				<line x1="5" y1="12" x2="19" y2="12"/>
+				<polyline points="12 5 19 12 12 19"/>
+			</svg>
+		</button>
+	</div>
+
+	<div class="lp-hero-stats">
+		<div class="lp-stat">
+			<span class="lp-stat-n">360°</span>
+			<span class="lp-stat-l">Visibilidad total</span>
+		</div>
+		<div class="lp-stat">
+			<span class="lp-stat-n">&#8734;</span>
+			<span class="lp-stat-l">Fincas y parcelas</span>
+		</div>
+		<div class="lp-stat">
+			<span class="lp-stat-n">1</span>
+			<span class="lp-stat-l">Plataforma unificada</span>
+		</div>
+	</div>
+</section>
+
+<!-- ── Funcionalidades ────────────────────────────────────────────────── -->
+<section class="lp-features" id="funcionalidades">
+	<div class="lp-feat-hd">
+		<span class="lp-feat-tag">Funcionalidades</span>
+		<h2 class="lp-feat-title">Un sistema hecho para la realidad del campo</h2>
+	</div>
+
+	<div class="lp-feat-grid">
+		<div class="lp-feat-card">
+			<svg class="lp-feat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+				<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/>
+				<line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+			</svg>
+			<span class="lp-feat-label">Cultivos</span>
+			<h3 class="lp-feat-name">Procesos de cultivo por ciclo</h3>
+			<p class="lp-feat-desc">Abre y cierra ciclos productivos por parcela. Cada ciclo lleva su propio historial de compras, ventas y mano de obra.</p>
+		</div>
+
+		<div class="lp-feat-card">
+			<svg class="lp-feat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+				<path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
+				<line x1="3" y1="6" x2="21" y2="6"/>
+				<path d="M16 10a4 4 0 01-8 0"/>
+			</svg>
+			<span class="lp-feat-label">Compras</span>
+			<h3 class="lp-feat-name">Control de insumos y gastos</h3>
+			<p class="lp-feat-desc">Registra cada compra con proveedor, cantidad y precio. Conoce exactamente cuánto inviertes en cada cosecha.</p>
+		</div>
+
+		<div class="lp-feat-card">
+			<svg class="lp-feat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+				<polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/>
+				<polyline points="16 7 22 7 22 13"/>
+			</svg>
+			<span class="lp-feat-label">Ventas</span>
+			<h3 class="lp-feat-name">Historial de precios por clasificación</h3>
+			<p class="lp-feat-desc">Registra cada venta por clasificación de producto. Descubre en qué época del año es más rentable vender.</p>
+		</div>
+
+		<div class="lp-feat-card">
+			<svg class="lp-feat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+				<path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+				<circle cx="9" cy="7" r="4"/>
+				<path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>
+			</svg>
+			<span class="lp-feat-label">Equipo</span>
+			<h3 class="lp-feat-name">Personas y actividades del campo</h3>
+			<p class="lp-feat-desc">Asigna responsables a cada actividad, lleva el tiempo empleado y mantén un registro completo de la mano de obra.</p>
+		</div>
+	</div>
+</section>
+
+<!-- ── Pull quote ─────────────────────────────────────────────────────── -->
+<section class="lp-quote">
+	<div class="lp-quote-inner">
+		<span class="lp-qmark">"</span>
+		<p class="lp-qtext">
+			El campo es complejo. El software que lo administra no tiene que serlo.
+		</p>
+		<span class="lp-qattr">FarmControl — diseñado para el agricultor colombiano</span>
+	</div>
+</section>
+
+<!-- ── Planes ─────────────────────────────────────────────────────────── -->
+<section class="lp-plans" id="planes">
+	<div class="lp-feat-hd">
+		<span class="lp-feat-tag">Planes</span>
+		<h2 class="lp-feat-title">Un plan para cada tamaño de operación</h2>
+	</div>
+
+	@if (loadingPlanes()) {
+		<div class="lp-plans-grid">
+			@for (i of [1, 2, 3]; track i) {
+				<div class="lp-plan-card lp-plan-skeleton"></div>
+			}
+		</div>
+	} @else if (planes().length === 0) {
+		<p class="lp-plans-empty">Los planes disponibles se publicarán pronto. Escríbenos y te contamos las opciones.</p>
+	} @else {
+		<div class="lp-plans-grid">
+			@for (plan of planes(); track plan.id) {
+				<div class="lp-plan-card">
+					<h3 class="lp-plan-name">{{ plan.nombre }}</h3>
+					@if (plan.descripcion) {
+						<p class="lp-plan-desc">{{ plan.descripcion }}</p>
+					}
+					<ul class="lp-plan-limits">
+						<li><strong>{{ limiteTexto(plan.maxFincas) }}</strong> fincas</li>
+						<li><strong>{{ limiteTexto(plan.maxUsuarios) }}</strong> usuarios</li>
+					</ul>
+					<button class="lp-plan-cta" (click)="openModal()">Comenzar</button>
+				</div>
+			}
+		</div>
+	}
+</section>
+
+<!-- ── Contacto ───────────────────────────────────────────────────────── -->
+<section class="lp-contact" id="contacto">
+	<div class="lp-contact-inner">
+		<div class="lp-c-info">
+			<span class="lp-c-tag">Contacto</span>
+			<h2 class="lp-c-title">¿Listo para tomar el control?</h2>
+			<p class="lp-c-desc">Escríbenos y te ayudamos a configurar FarmControl para tu finca.</p>
+			<div class="lp-c-detail">
+				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+					<path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+					<polyline points="22,6 12,13 2,6"/>
+				</svg>
+				contacto&#64;farmcontrol.co
+			</div>
+		</div>
+
+		<form class="lp-c-form" (ngSubmit)="onContact()" [formGroup]="contactForm">
+			@if (contactSent()) {
+				<div class="lp-c-sent">
+					Mensaje enviado. Nos pondremos en contacto contigo pronto.
+				</div>
+			} @else {
+				<div class="lp-c-fg">
+					<label class="lp-c-label" for="c-nombre">Nombre</label>
+					<input id="c-nombre" class="lp-c-input" type="text" placeholder="Tu nombre" formControlName="nombre">
+				</div>
+				<div class="lp-c-fg">
+					<label class="lp-c-label" for="c-email">Correo electrónico</label>
+					<input id="c-email" class="lp-c-input" type="email" placeholder="tu&#64;correo.com" formControlName="email">
+				</div>
+				<div class="lp-c-fg">
+					<label class="lp-c-label" for="c-msg">Mensaje</label>
+					<textarea id="c-msg" class="lp-c-input" rows="4" placeholder="Cuéntanos sobre tu finca…" formControlName="mensaje"></textarea>
+				</div>
+				<button class="lp-btn-send" type="submit">Enviar mensaje</button>
+			}
+		</form>
+	</div>
+</section>
+
+<!-- ── Footer ─────────────────────────────────────────────────────────── -->
+<footer class="lp-footer">
+	<div class="lp-footer-inner">
+		<a class="lp-footer-logo" href="#inicio"><strong>Farm</strong>Control</a>
+		<span class="lp-footer-copy">&copy; 2026 FarmControl. Todos los derechos reservados.</span>
+		<button class="lp-footer-btn" (click)="openModal()">Ingresar &rarr;</button>
+	</div>
+</footer>
+
+<!-- ── Login Modal ─────────────────────────────────────────────────────── -->
+@if (showModal()) {
+	<div class="lp-modal-bg" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+		<div class="lp-modal">
+			<button class="lp-modal-close" (click)="closeModal()" aria-label="Cerrar">&times;</button>
+
+			<div class="lp-modal-logo" id="modal-title"><strong>Farm</strong>Control</div>
+			<p class="lp-modal-sub">Ingresa tus credenciales para acceder</p>
+
+			<form [formGroup]="loginForm" (ngSubmit)="onLogin()">
+				<div class="lp-modal-field">
+					<label class="lp-modal-label" for="m-user">Usuario</label>
+					<input id="m-user" class="lp-modal-input" type="text"
+						placeholder="nombre de usuario" formControlName="usuario" autocomplete="username">
+				</div>
+				<div class="lp-modal-field">
+					<label class="lp-modal-label" for="m-pass">Contrase&#241;a</label>
+					<input id="m-pass" class="lp-modal-input" type="password"
+						placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;" formControlName="contrasena" autocomplete="current-password">
+				</div>
+
+				@if (errorMsg()) {
+					<p class="lp-modal-error">{{ errorMsg() }}</p>
+				}
+
+				<button class="lp-modal-btn" type="submit" [disabled]="loginForm.invalid || isLoading()">
+					{{ isLoading() ? 'Ingresando…' : 'Ingresar' }}
+				</button>
+			</form>
+		</div>
+	</div>
+}

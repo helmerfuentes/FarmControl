@@ -1,0 +1,293 @@
+<div class="fincas-layout">
+	<!-- Panel izquierdo: listado de fincas -->
+	<div class="fincas-list-panel">
+		<div class="panel-header">
+			<div>
+				<h1>Fincas</h1>
+				<p>Tus fincas contratadas y sus parcelas — cada parcela es donde se registran actividades, compras, ventas y procesos de cultivo.</p>
+			</div>
+		</div>
+
+		@if (loading()) {
+			<div class="list-loading">Cargando…</div>
+		} @else if (fincas().length === 0) {
+			<div class="list-empty">No hay fincas registradas.</div>
+		} @else {
+			<ul class="finca-list">
+				@for (f of fincas(); track f.id) {
+					<li class="finca-item" [class.selected]="selectedFinca()?.id === f.id"
+						(click)="selectFinca(f)">
+						<div class="finca-item-name">{{ f.nombre }}</div>
+						<div class="finca-item-meta">{{ f.ubicacion }}</div>
+						<div class="finca-item-area">{{ f.areaTotal | number:'1.0-1' }} ha</div>
+						@if (isAdmin()) {
+							<div class="finca-item-actions">
+								<button class="btn btn-icon btn-ghost btn-xs" title="Editar"
+									(click)="$event.stopPropagation(); openEditFinca(f)">
+									<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+										<path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+										<path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+									</svg>
+								</button>
+							</div>
+						}
+					</li>
+				}
+			</ul>
+		}
+	</div>
+
+	<!-- Panel derecho: detalle de finca + parcelas -->
+	@if (selectedFinca()) {
+		<div class="finca-detail-panel">
+			<div class="detail-header">
+				<div>
+					<h2>{{ selectedFinca()!.nombre }}</h2>
+					<p class="text-muted">{{ selectedFinca()!.ubicacion }}</p>
+				</div>
+				<div class="detail-stats">
+					<div class="stat">
+						<span class="stat-value">{{ selectedFinca()!.areaTotal | number:'1.0-1' }}</span>
+						<span class="stat-label">hectáreas</span>
+					</div>
+					<div class="stat">
+						<span class="stat-value val-money">{{ selectedFinca()!.costoTerreno | number:'1.0-0' }}</span>
+						<span class="stat-label">costo terreno</span>
+					</div>
+				</div>
+			</div>
+
+			<div class="parcelas-section">
+				<div class="section-header">
+					<h3>Parcelas</h3>
+					@if (isAdmin()) {
+						<button class="btn btn-ghost btn-sm" (click)="openNewParcela()">
+							<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+								<path d="M12 5v14M5 12h14"/>
+							</svg>
+							Nueva parcela
+						</button>
+					}
+				</div>
+
+				@if (parcelas().length === 0) {
+					<p class="table-empty">Esta finca no tiene parcelas registradas.</p>
+				} @else {
+					<div class="data-table-wrap cards-on-mobile">
+						<table class="data-table">
+							<thead>
+								<tr>
+									<th>Parcela</th>
+									<th>Área</th>
+									<th></th>
+									<th></th>
+									@if (isAdmin()) { <th></th> }
+								</tr>
+							</thead>
+							<tbody>
+								@for (p of parcelas(); track p.id) {
+									<tr (click)="openEditParcela(p)">
+										<td data-label="Parcela">{{ p.nombre }}</td>
+										<td data-label="Área">{{ p.area | number:'1.0-2' }} ha</td>
+										<td>
+											<button class="btn btn-ghost btn-sm" (click)="$event.stopPropagation(); toggleTareasParcela(p)">
+												{{ parcelaTareasId() === p.id ? 'Ocultar tareas' : 'Tareas recurrentes' }}
+											</button>
+										</td>
+										<td>
+											<button class="btn btn-ghost btn-sm" (click)="$event.stopPropagation(); toggleAnalisisParcela(p)">
+												{{ parcelaAnalisisId() === p.id ? 'Ocultar análisis' : 'Análisis de suelo' }}
+											</button>
+										</td>
+										@if (isAdmin()) {
+											<td>
+												<div class="row-actions">
+													<button class="btn btn-icon btn-ghost" title="Editar"
+														(click)="$event.stopPropagation(); openEditParcela(p)">
+														<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+															<path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+															<path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+														</svg>
+													</button>
+												</div>
+											</td>
+										}
+									</tr>
+									@if (parcelaTareasId() === p.id) {
+										<tr>
+											<td [attr.colspan]="isAdmin() ? 5 : 4">
+												<div class="tareas-section">
+													@if (loadingTareas()) {
+														<p class="table-empty">Cargando tareas…</p>
+													} @else {
+														@if (tareas().length === 0) {
+															<p class="table-empty">Sin tareas recurrentes para esta parcela.</p>
+														} @else {
+															<ul class="tareas-list">
+																@for (t of tareas(); track t.id) {
+																	<li class="tarea-item" [class.inactiva]="!t.activa">
+																		<div class="tarea-info">
+																			<strong>{{ t.descripcion }}</strong>
+																			<span class="text-muted">Cada {{ t.frecuenciaDias }} días · Próxima: {{ t.proximaFecha | date:'dd/MM/yyyy' }}</span>
+																			@if (t.ultimaEjecucion) {
+																				<span class="text-muted">Última ejecución: {{ t.ultimaEjecucion | date:'dd/MM/yyyy' }}</span>
+																			}
+																		</div>
+																		@if (isAdmin()) {
+																			<div class="tarea-actions">
+																				<button class="btn btn-ghost btn-sm" (click)="completarTarea(t.id)">Completar</button>
+																				<button class="btn btn-icon btn-ghost" title="Eliminar" (click)="confirmDeleteTarea(t.id)">
+																					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+																						<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>
+																					</svg>
+																				</button>
+																			</div>
+																		}
+																	</li>
+																}
+															</ul>
+														}
+														@if (isAdmin()) {
+															<form [formGroup]="tareaForm" (ngSubmit)="agregarTarea()" class="tarea-form">
+																<input class="form-control" formControlName="descripcion" placeholder="Ej: Fumigación">
+																<input class="form-control" type="number" min="1" formControlName="frecuenciaDias" title="Frecuencia (días)">
+																<input class="form-control" type="date" formControlName="proximaFecha">
+																<button type="submit" class="btn btn-primary btn-sm" [disabled]="tareaForm.invalid || saving()">Agregar</button>
+															</form>
+														}
+													}
+												</div>
+											</td>
+										</tr>
+									}
+									@if (parcelaAnalisisId() === p.id) {
+										<tr>
+											<td [attr.colspan]="isAdmin() ? 5 : 4">
+												<div class="tareas-section">
+													@if (loadingAnalisis()) {
+														<p class="table-empty">Cargando análisis…</p>
+													} @else {
+														@if (analisisSuelo().length === 0) {
+															<p class="table-empty">Sin análisis de suelo para esta parcela.</p>
+														} @else {
+															<ul class="tareas-list">
+																@for (a of analisisSuelo(); track a.id) {
+																	<li class="tarea-item">
+																		<div class="tarea-info">
+																			<strong>{{ a.fecha | date:'dd/MM/yyyy' }}</strong>
+																			<span class="text-muted">
+																				@if (a.ph !== null) { pH: {{ a.ph }} }
+																				@if (a.materiaOrganica !== null) { · M.O.: {{ a.materiaOrganica }}% }
+																				@if (a.nitrogeno !== null) { · N: {{ a.nitrogeno }} }
+																				@if (a.fosforo !== null) { · P: {{ a.fosforo }} }
+																				@if (a.potasio !== null) { · K: {{ a.potasio }} }
+																			</span>
+																			@if (a.observacion) {
+																				<span class="text-muted">{{ a.observacion }}</span>
+																			}
+																		</div>
+																		@if (isAdmin()) {
+																			<div class="tarea-actions">
+																				<button class="btn btn-icon btn-ghost" title="Eliminar" (click)="confirmDeleteAnalisis(a.id)">
+																					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+																						<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>
+																					</svg>
+																				</button>
+																			</div>
+																		}
+																	</li>
+																}
+															</ul>
+														}
+														@if (isAdmin()) {
+															<form [formGroup]="analisisForm" (ngSubmit)="agregarAnalisisSuelo()" class="tarea-form">
+																<input class="form-control" type="date" formControlName="fecha">
+																<input class="form-control" type="number" step="0.1" formControlName="ph" placeholder="pH">
+																<input class="form-control" type="number" step="0.1" formControlName="materiaOrganica" placeholder="M.O. %">
+																<input class="form-control" type="number" step="0.1" formControlName="nitrogeno" placeholder="N">
+																<input class="form-control" type="number" step="0.1" formControlName="fosforo" placeholder="P">
+																<input class="form-control" type="number" step="0.1" formControlName="potasio" placeholder="K">
+																<input class="form-control" formControlName="observacion" placeholder="Observación">
+																<button type="submit" class="btn btn-primary btn-sm" [disabled]="analisisForm.invalid || saving()">Agregar</button>
+															</form>
+														}
+													}
+												</div>
+											</td>
+										</tr>
+									}
+								}
+							</tbody>
+						</table>
+					</div>
+				}
+			</div>
+		</div>
+	} @else {
+		<div class="finca-placeholder">
+			<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5">
+				<path d="M6 38l12-14 8 9 8-12 8 17"/>
+				<path d="M3 42h42"/>
+			</svg>
+			<p>Selecciona una finca para ver sus parcelas</p>
+		</div>
+	}
+</div>
+
+<fc-drawer [title]="drawerTitle()" [open]="panelOpen()" (closed)="closePanel()">
+	@if (panelMode() === 'finca') {
+		<form [formGroup]="fincaForm" (ngSubmit)="saveFinca()">
+			<div class="form-group">
+				<label class="form-label">Nombre *</label>
+				<input class="form-control" formControlName="nombre" placeholder="Ej: Finca El Mirador">
+			</div>
+			<div class="form-group">
+				<label class="form-label">Ubicación *</label>
+				<input class="form-control" formControlName="ubicacion" placeholder="Municipio / Vereda">
+			</div>
+			<div class="form-group">
+				<label class="form-label">Área total (ha) *</label>
+				<input class="form-control" type="number" step="0.1" formControlName="areaTotal">
+			</div>
+			<div class="form-group">
+				<label class="form-label">Costo del terreno (COP) *</label>
+				<input class="form-control" type="number" step="1000" formControlName="costoTerreno">
+			</div>
+			<div class="form-actions">
+				<button type="button" class="btn btn-ghost" (click)="closePanel()">Cancelar</button>
+				<button type="submit" class="btn btn-primary" [disabled]="fincaForm.invalid || saving()">
+					{{ saving() ? 'Guardando…' : 'Guardar' }}
+				</button>
+			</div>
+		</form>
+	} @else {
+		<form [formGroup]="parcelaForm" (ngSubmit)="saveParcela()">
+			<div class="form-group">
+				<label class="form-label">Nombre *</label>
+				<input class="form-control" formControlName="nombre" placeholder="Ej: Lote A">
+			</div>
+			<div class="form-group">
+				<label class="form-label">Área (ha) *</label>
+				<input class="form-control" type="number" step="0.01" formControlName="area">
+			</div>
+			<div class="form-actions">
+				<button type="button" class="btn btn-ghost" (click)="closePanel()">Cancelar</button>
+				<button type="submit" class="btn btn-primary" [disabled]="parcelaForm.invalid || saving()">
+					{{ saving() ? 'Guardando…' : 'Guardar' }}
+				</button>
+			</div>
+		</form>
+	}
+</fc-drawer>
+
+<fc-confirm-dialog
+	[open]="deleteTareaId() !== null"
+	message="¿Eliminar esta tarea recurrente?"
+	(confirmed)="doDeleteTarea()"
+	(cancelled)="cancelDeleteTarea()"/>
+
+<fc-confirm-dialog
+	[open]="deleteAnalisisId() !== null"
+	message="¿Eliminar este análisis de suelo?"
+	(confirmed)="doDeleteAnalisis()"
+	(cancelled)="cancelDeleteAnalisis()"/>

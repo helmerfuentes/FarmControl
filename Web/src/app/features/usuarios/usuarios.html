@@ -1,0 +1,116 @@
+<div class="page">
+	<div class="page-header">
+		<div>
+			<h1>Usuarios</h1>
+			<p>Crea usuarios con acceso al sistema para tu equipo y administra a cuáles de tus fincas puede entrar cada uno, sin depender del proveedor del servicio.</p>
+		</div>
+		<div class="page-actions">
+			<button class="btn btn-primary" (click)="openNew()">
+				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+				Nuevo usuario
+			</button>
+		</div>
+	</div>
+
+	@if (errorMsg()) {
+		<p class="form-error">{{ errorMsg() }}</p>
+	}
+
+	@if (loading()) {
+		<p class="list-loading">Cargando…</p>
+	} @else if (usuarios().length === 0) {
+		<fc-empty-state title="No tienes usuarios registrados." message="Crea el primer usuario de tu equipo y dale acceso a las fincas que necesite ver.">
+			<button class="btn btn-primary" (click)="openNew()">Nuevo usuario</button>
+		</fc-empty-state>
+	} @else {
+		@for (p of usuarios(); track p.id) {
+			<div class="usuario-card">
+				<div class="usuario-card-header">
+					<div>
+						<strong>{{ p.nombre }}</strong>
+						<span class="text-muted"> — {{ p.nombreUsuario }}</span>
+					</div>
+					<label class="checkbox-row">
+						<input type="checkbox" [checked]="p.activo" (change)="toggleUsuarioActivo(p)">
+						{{ p.activo ? 'Habilitado' : 'Deshabilitado (solo lectura en todas sus fincas)' }}
+					</label>
+				</div>
+				<ul class="acceso-finca-list">
+					@for (acceso of p.fincas; track acceso.fincaId) {
+						<li>
+							<span>{{ acceso.fincaNombre }}</span>
+							<select class="form-control nivel-select" [value]="nivelAccesoDesde(acceso)"
+								(change)="onCambiarNivelAcceso(p.id, acceso, $any($event.target).value)">
+								<option value="lectura">Solo lectura</option>
+								<option value="escritura">Lectura y escritura</option>
+								<option value="total">Lectura, escritura y eliminación</option>
+							</select>
+						</li>
+					}
+				</ul>
+			</div>
+		}
+	}
+</div>
+
+<fc-drawer title="Nuevo usuario" [open]="panelOpen()" (closed)="closePanel()">
+	<form [formGroup]="usuarioForm" (ngSubmit)="guardarUsuario()">
+		<div class="form-group">
+			<label class="form-label">Nombre *</label>
+			<input class="form-control" formControlName="nombre">
+		</div>
+		<div class="form-group">
+			<label class="form-label">Documento *</label>
+			<input class="form-control" formControlName="documento">
+		</div>
+		<div class="form-group">
+			<label class="form-label">Teléfono *</label>
+			<input class="form-control" formControlName="telefono">
+		</div>
+		<div class="form-group">
+			<label class="form-label">Email</label>
+			<input class="form-control" type="email" formControlName="email">
+		</div>
+		<div class="form-group">
+			<label class="form-label">Rol *</label>
+			<select class="form-control" formControlName="tipoPersona">
+				<option value="Admin">Administrador (acceso completo según fincas asignadas)</option>
+				<option value="Contador">Contador (solo lectura, únicamente Reportes)</option>
+			</select>
+		</div>
+		<div class="form-group">
+			<label class="form-label">Usuario de acceso *</label>
+			<input class="form-control" formControlName="nombreUsuario">
+		</div>
+		<div class="form-group">
+			<label class="form-label">Contraseña *</label>
+			<input class="form-control" type="password" formControlName="contrasena">
+		</div>
+		<div class="form-group">
+			<label class="form-label">Fincas a las que tendrá acceso *</label>
+			@for (f of fincas(); track f.id) {
+				<div class="finca-acceso-row">
+					<label class="checkbox-row">
+						<input type="checkbox" [checked]="estaSeleccionada(f.id)" (change)="toggleFincaSeleccionada(f.id, $any($event.target).checked)">
+						{{ f.nombre }}
+					</label>
+					@if (estaSeleccionada(f.id)) {
+						<select class="form-control nivel-select" [value]="nivelSeleccionado(f.id)"
+							(change)="onNivelSeleccionadoChange(f.id, $any($event.target).value)">
+							<option value="lectura">Solo lectura</option>
+							<option value="escritura">Lectura y escritura</option>
+							<option value="total">Lectura, escritura y eliminación</option>
+						</select>
+					}
+				</div>
+			}
+			<span class="form-hint">"Lectura y escritura" no permite eliminar registros; "Control total" sí.</span>
+		</div>
+		<div class="form-actions">
+			<button type="button" class="btn btn-ghost" (click)="closePanel()">Cancelar</button>
+			<button type="submit" class="btn btn-primary" [disabled]="usuarioForm.invalid || saving()">
+				{{ saving() ? 'Guardando…' : 'Crear usuario' }}
+			</button>
+		</div>
+	</form>
+</fc-drawer>

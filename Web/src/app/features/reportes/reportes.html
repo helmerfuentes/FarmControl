@@ -1,0 +1,286 @@
+<h2 class="sr-only">Reporte financiero por finca</h2>
+
+<div class="page">
+	<div class="top-row">
+		<div>
+			<h1 class="page-title">Reportes</h1>
+			<p class="page-sub">Ingresos, compras, mano de obra y utilidad por finca y parcela, más el historial de precios de venta por producto a través del tiempo.</p>
+		</div>
+		<div class="reportes-actions no-imprimir">
+			@if (mostrarToggleConsolidado()) {
+				<button class="btn btn-ghost btn-sm" (click)="toggleVistaConsolidada()">
+					{{ vistaConsolidada() ? 'Ver finca activa' : 'Ver todas mis fincas' }}
+				</button>
+			}
+			@if (!vistaConsolidada() && fincaActivaNombre()) {
+				<div class="finca-select-wrap">
+					<span class="finca-label">Finca activa</span>
+					<span class="finca-activa-valor">{{ fincaActivaNombre() }}</span>
+				</div>
+			}
+			@if (!vistaConsolidada() && resumen() && selectedFincaId() !== null) {
+				<button class="btn btn-ghost btn-sm" (click)="compartir()" [disabled]="compartiendo()">
+					{{ compartiendo() ? 'Generando…' : 'Compartir' }}
+				</button>
+			}
+			@if (resumen() || consolidado()) {
+				<button class="btn btn-ghost btn-sm" (click)="exportarCsv()">Exportar CSV</button>
+				<button class="btn btn-ghost btn-sm" (click)="imprimir()">Imprimir / PDF</button>
+			}
+		</div>
+	</div>
+
+	@if (linkCompartido(); as link) {
+		<div class="compartir-box no-imprimir">
+			<span class="compartir-label">Link de solo lectura (sin login):</span>
+			<code class="compartir-link">{{ link }}</code>
+			<button class="btn btn-ghost btn-sm" (click)="copiarLink()">{{ linkCopiado() ? 'Copiado ✓' : 'Copiar' }}</button>
+			<button class="btn btn-ghost btn-sm" (click)="cerrarLinkCompartido()">Cerrar</button>
+		</div>
+	}
+
+	@if (vistaConsolidada()) {
+		@if (loadingConsolidado()) {
+			<fc-dashboard-skeleton />
+		} @else if (consolidado(); as c) {
+			<div class="reporte-body">
+				<div class="kpi-grid">
+					<div class="kpi">
+						<div class="kpi-accent kpi-accent-ingresos"></div>
+						<span class="kpi-label">Ingresos (todas las fincas)</span>
+						<span class="kpi-val kpi-pos">{{ c.totalIngresos | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
+					</div>
+					<div class="kpi">
+						<div class="kpi-accent kpi-accent-compras"></div>
+						<span class="kpi-label">Compras / Gastos</span>
+						<span class="kpi-val">{{ c.totalCompras | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
+					</div>
+					<div class="kpi">
+						<div class="kpi-accent kpi-accent-mano"></div>
+						<span class="kpi-label">Mano de obra</span>
+						<span class="kpi-val">{{ c.totalManoObra | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
+					</div>
+					<div class="kpi" [class.kpi-negativo]="c.utilidad < 0">
+						<div class="kpi-accent" [class.kpi-accent-util-neg]="c.utilidad < 0" [class.kpi-accent-util-pos]="c.utilidad >= 0"></div>
+						<span class="kpi-label">Utilidad neta total</span>
+						<span class="kpi-val" [class.kpi-neg]="c.utilidad < 0" [class.kpi-pos]="c.utilidad >= 0">
+							{{ c.utilidad | currency:'COP':'symbol-narrow':'1.0-0' }}
+						</span>
+					</div>
+				</div>
+
+				<div class="parcelas-card">
+					<div class="parcelas-header">
+						<span>Finca</span>
+						<span class="col-r">Ingresos</span>
+						<span class="col-r">Compras / Gastos</span>
+						<span class="col-r">Mano de obra</span>
+						<span class="col-r">Utilidad</span>
+					</div>
+					@for (f of c.fincas; track f.fincaId) {
+						<div class="parcela-row">
+							<span class="p-name">{{ f.nombre }}</span>
+							<span class="col-r p-money">{{ f.totalIngresos | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
+							<span class="col-r p-money">{{ f.totalCompras | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
+							<span class="col-r p-money">{{ f.totalManoObra | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
+							<span class="col-r p-money" [class.kpi-neg]="f.utilidad < 0" [class.kpi-pos]="f.utilidad >= 0">
+								{{ f.utilidad | currency:'COP':'symbol-narrow':'1.0-0' }}
+							</span>
+						</div>
+					}
+					@empty {
+						<div class="empty-parcelas">No tienes fincas registradas.</div>
+					}
+				</div>
+
+				@if (c.fincas.length > 0) {
+					<div class="chart-card chart-card-wide">
+						<div class="chart-title">Ingresos vs gastos por finca</div>
+						<div class="chart-wrap chart-wrap-tall">
+							<canvas id="consolidadoChart" role="img" aria-label="Comparación de ingresos y gastos por finca">Ingresos y gastos por finca.</canvas>
+						</div>
+					</div>
+				}
+			</div>
+		}
+	}
+
+	@if (!vistaConsolidada() && loading()) {
+		<fc-dashboard-skeleton />
+	}
+
+	@if (error()) {
+		<div class="alert alert-error">{{ error() }}</div>
+	}
+
+	@if (!vistaConsolidada() && resumen()) {
+		@let r = resumen()!;
+		<div class="reporte-body">
+
+			<div class="kpi-grid">
+				<div class="kpi">
+					<div class="kpi-accent kpi-accent-ingresos"></div>
+					<span class="kpi-label">Ingresos</span>
+					<span class="kpi-val kpi-pos">{{ r.totalIngresos | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
+				</div>
+				<div class="kpi">
+					<div class="kpi-accent kpi-accent-compras"></div>
+					<span class="kpi-label">Compras / Gastos</span>
+					<span class="kpi-val">{{ r.totalCompras | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
+				</div>
+				<div class="kpi">
+					<div class="kpi-accent kpi-accent-mano"></div>
+					<span class="kpi-label">Mano de obra</span>
+					<span class="kpi-val">{{ r.totalManoObra | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
+				</div>
+				<div class="kpi" [class.kpi-negativo]="r.utilidad < 0">
+					<div class="kpi-accent" [class.kpi-accent-util-neg]="r.utilidad < 0" [class.kpi-accent-util-pos]="r.utilidad >= 0"></div>
+					<span class="kpi-label">Utilidad neta</span>
+					<span class="kpi-val" [class.kpi-neg]="r.utilidad < 0" [class.kpi-pos]="r.utilidad >= 0">
+						{{ r.utilidad | currency:'COP':'symbol-narrow':'1.0-0' }}
+					</span>
+					<span class="kpi-sub">Margen {{ margen() | number:'1.1-1' }}%</span>
+				</div>
+			</div>
+
+			<div class="charts-row">
+				<div class="chart-card">
+					<div class="chart-title">Distribución de costos</div>
+					<div class="chart-legend">
+						<span class="legend-item"><span class="legend-dot legend-compras"></span>Compras</span>
+						<span class="legend-item"><span class="legend-dot legend-mano"></span>Mano de obra</span>
+					</div>
+					<div class="chart-wrap">
+						<canvas id="donutChart" role="img" aria-label="Distribución de costos entre compras y mano de obra">Compras y mano de obra.</canvas>
+					</div>
+				</div>
+				<div class="chart-card">
+					<div class="chart-title">Ingresos vs gastos</div>
+					<div class="chart-legend">
+						<span class="legend-item"><span class="legend-dot legend-ingresos"></span>Ingresos</span>
+						<span class="legend-item"><span class="legend-dot legend-gastos"></span>Gastos totales</span>
+					</div>
+					<div class="chart-wrap">
+						<canvas id="barChart" role="img" aria-label="Comparación de ingresos y gastos totales">Ingresos y gastos.</canvas>
+					</div>
+				</div>
+			</div>
+
+			@if (historico(); as h) {
+				<div class="chart-card chart-card-wide">
+					<div class="chart-title">Evolución mensual (últimos {{ h.meses.length }} meses)</div>
+					<div class="chart-wrap chart-wrap-tall">
+						<canvas id="evolucionChart" role="img" aria-label="Evolución mensual de ingresos y gastos">Evolución mensual de ingresos y gastos.</canvas>
+					</div>
+				</div>
+			}
+
+			<div class="parcelas-card">
+				<div class="parcelas-header">
+					<span>Parcela</span>
+					<span>Producto</span>
+					<span class="col-r">Área (ha)</span>
+					<span class="col-r">Ingresos</span>
+					<span class="col-r">Mano de obra</span>
+					<span class="col-r">Utilidad</span>
+				</div>
+				@for (p of r.parcelas; track p.id) {
+					<div class="parcela-row">
+						<span class="p-name">{{ p.nombre }}</span>
+						<span>
+							@if (p.producto) {
+								<span class="badge-prod">{{ p.producto }}</span>
+							} @else {
+								<span class="text-muted">—</span>
+							}
+						</span>
+						<span class="col-r text-muted">{{ p.area | number:'1.2-2' }}</span>
+						<span class="col-r p-money">{{ p.totalIngresos | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
+						<span class="col-r p-money">{{ p.totalManoObra | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
+						<span class="col-r p-money" [class.kpi-neg]="(p.totalIngresos - p.totalManoObra) < 0" [class.kpi-pos]="(p.totalIngresos - p.totalManoObra) >= 0">
+							{{ (p.totalIngresos - p.totalManoObra) | currency:'COP':'symbol-narrow':'1.0-0' }}
+						</span>
+					</div>
+				}
+				@empty {
+					<div class="empty-parcelas">Esta finca no tiene parcelas registradas.</div>
+				}
+			</div>
+
+		</div>
+	}
+
+	@if (!vistaConsolidada() && !resumen() && !loading() && selectedFincaId() === null) {
+		<div class="empty-state">
+			<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 17.5h7M17.5 14v7"/></svg>
+			<p>No tienes una finca activa seleccionada.</p>
+		</div>
+	}
+
+	<div class="precios-section">
+		<div class="precios-header">
+			<h2>Historial de precios de venta</h2>
+			<select class="precios-select" (change)="onSelectProducto($any($event.target).value)">
+				<option value="">Seleccionar producto…</option>
+				@for (p of productos(); track p.id) {
+					<option [value]="p.id">{{ p.nombre }}</option>
+				}
+			</select>
+		</div>
+
+		@if (loadingPrecios()) {
+			<p class="empty-parcelas">Cargando…</p>
+		} @else if (selectedProductoId() !== null && historialPrecios().length === 0) {
+			<p class="empty-parcelas">Este producto no tiene ventas registradas todavía.</p>
+		} @else if (selectedProductoId() !== null) {
+			@for (h of historialPrecios(); track h.clasificacion) {
+				<div class="precio-clasificacion-card">
+					<h3>{{ h.clasificacion }} <span class="text-muted">({{ h.unidadMedida }})</span></h3>
+					<div class="data-table-wrap cards-on-mobile">
+						<table class="data-table">
+							<thead>
+								<tr>
+									<th>Mes</th>
+									<th>Precio promedio</th>
+									<th>Mínimo</th>
+									<th>Máximo</th>
+									<th># Ventas</th>
+								</tr>
+							</thead>
+							<tbody>
+								@for (m of h.porMes; track m.anio + '-' + m.mes) {
+									<tr>
+										<td data-label="Mes">{{ nombresMes[m.mes - 1] }} {{ m.anio }}</td>
+										<td class="val-money" data-label="Precio promedio">{{ m.precioPromedio | currency:'COP':'symbol-narrow':'1.0-0' }}</td>
+										<td class="text-muted" data-label="Mínimo">{{ m.precioMin | currency:'COP':'symbol-narrow':'1.0-0' }}</td>
+										<td class="text-muted" data-label="Máximo">{{ m.precioMax | currency:'COP':'symbol-narrow':'1.0-0' }}</td>
+										<td class="text-muted" data-label="# Ventas">{{ m.numVentas }}</td>
+									</tr>
+								}
+							</tbody>
+						</table>
+					</div>
+				</div>
+			}
+		}
+
+		<div class="precios-section">
+			<div class="precios-header">
+				<h2>Estacionalidad de precios</h2>
+			</div>
+
+			@if (selectedProductoId() === null) {
+				<p class="empty-parcelas">Selecciona un producto arriba para ver su estacionalidad.</p>
+			} @else if (loadingEstacionalidad()) {
+				<p class="empty-parcelas">Cargando…</p>
+			} @else if (estacionalidad()) {
+				<div class="chart-card chart-card-wide">
+					<div class="chart-title">Precio promedio por mes del año (todo el histórico)</div>
+					<div class="chart-wrap chart-wrap-tall">
+						<canvas id="estacionalidadChart" role="img" aria-label="Estacionalidad de precios por mes">Estacionalidad de precios por mes.</canvas>
+					</div>
+				</div>
+			}
+		</div>
+	</div>
+</div>

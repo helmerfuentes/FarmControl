@@ -1,0 +1,368 @@
+<div class="page-header">
+	<div>
+		<h1>Procesos de Cultivo</h1>
+		<p class="page-subtitle">Ciclo de vida de un cultivo en una parcela: desde la siembra hasta la cosecha o el cierre, con su producto, costo inicial, socio y estado.</p>
+	</div>
+	<div class="page-actions">
+		@if (seleccionParaComparar().size >= 2) {
+			<button class="btn btn-ghost" (click)="compararSeleccionados()">
+				Comparar seleccionados ({{ seleccionParaComparar().size }})
+			</button>
+		}
+		@if (isAdmin()) {
+			<button class="btn btn-primary" (click)="openNew()">
+				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+					<path d="M12 5v14M5 12h14"/>
+				</svg>
+				Nuevo proceso
+			</button>
+		}
+	</div>
+</div>
+
+@if (deleteErrorMsg()) {
+	<p class="form-error">{{ deleteErrorMsg() }}</p>
+}
+
+<div class="filtros">
+	<select class="form-control filtro-select"
+		(change)="applyFiltro($any($event.target).value ? +$any($event.target).value : null, filtroEstado())">
+		<option value="">Todas las parcelas</option>
+		@for (p of parcelasDeFincaActiva(); track p.id) {
+			<option [value]="p.id">{{ p.nombre }}</option>
+		}
+	</select>
+	<select class="form-control filtro-select"
+		(change)="applyFiltro(filtroParcelaId(), $any($event.target).value || null)">
+		<option value="">Todos los estados</option>
+		@for (e of estadoOpciones; track e) {
+			<option [value]="e">{{ e }}</option>
+		}
+	</select>
+
+	@if (filtroParcelaId() !== null) {
+		<div class="vista-toggle">
+			<button type="button" class="tab-btn" [class.active]="vistaModo() === 'tabla'" (click)="setVistaModo('tabla')">Tabla</button>
+			<button type="button" class="tab-btn" [class.active]="vistaModo() === 'linea-tiempo'" (click)="setVistaModo('linea-tiempo')">Línea de tiempo</button>
+		</div>
+	}
+</div>
+
+@if (loading()) {
+	<fc-table-skeleton [rows]="6" [cols]="7" />
+} @else if (procesos().length === 0) {
+	<fc-empty-state title="No hay procesos de cultivo registrados." message="Abre un ciclo productivo por parcela para llevar su historial de compras, ventas y mano de obra.">
+		@if (isAdmin()) {
+			<button class="btn btn-primary" (click)="openNew()">Nuevo proceso</button>
+		}
+	</fc-empty-state>
+} @else if (filtroParcelaId() !== null && vistaModo() === 'linea-tiempo') {
+	@if (lineaTiempoItems().length === 0) {
+		<div class="table-empty">Esta parcela no tiene procesos de cultivo registrados.</div>
+	} @else {
+		<div class="linea-tiempo">
+			@for (p of lineaTiempoItems(); track p.id) {
+				<div class="linea-tiempo-item">
+					<div class="linea-tiempo-marker" [class]="estadoBadgeClass(p.estado)"></div>
+					<div class="linea-tiempo-card">
+						<div class="linea-tiempo-card-header">
+							<strong>{{ p.productoNombre }}</strong>
+							<span class="badge" [class]="estadoBadgeClass(p.estado)">{{ p.estado }}</span>
+						</div>
+						<p class="text-muted linea-tiempo-fechas">
+							{{ p.fechaInicio | date:'dd/MM/yyyy' }}
+							→ {{ p.fechaCierre ? (p.fechaCierre | date:'dd/MM/yyyy') : (p.fechaEstimadaCosecha ? ('est. ' + (p.fechaEstimadaCosecha | date:'dd/MM/yyyy')) : 'en curso') }}
+						</p>
+						<p class="text-muted">Costo inicial: {{ p.costoInicial | currency:'COP':'symbol-narrow':'1.0-0' }}</p>
+						<div class="linea-tiempo-actions">
+							<button class="btn btn-ghost btn-sm" (click)="verResumen(p.id)">Ver resumen</button>
+							<label class="checkbox-row">
+								<input type="checkbox" [checked]="estaSeleccionadoParaComparar(p.id)" (change)="toggleSeleccionParaComparar(p.id, $any($event.target).checked)">
+								Comparar
+							</label>
+						</div>
+					</div>
+				</div>
+			}
+		</div>
+	}
+} @else {
+	<app-table-controls
+		[total]="totalFiltered()"
+		[page]="page()"
+		[pageSize]="pageSize()"
+		(searchChange)="onSearch($event)"
+		(pageChange)="onPageChange($event)"
+		(pageSizeChange)="onPageSizeChange($event)" />
+	<div class="data-table-wrap cards-on-mobile">
+		<table class="data-table">
+			<thead>
+				<tr>
+					<th></th>
+					<th>Parcela</th>
+					<th>Cultivo</th>
+					<th>Socio</th>
+					<th class="col-money">Costo inicial</th>
+					<th>Inicio</th>
+					<th>Est. cosecha</th>
+					<th>Estado</th>
+					<th></th>
+					@if (isAdmin()) { <th></th> }
+				</tr>
+			</thead>
+			<tbody>
+				@for (p of pageItems(); track p.id) {
+					<tr>
+						<td data-label="Comparar">
+							<input type="checkbox" [checked]="estaSeleccionadoParaComparar(p.id)" (change)="toggleSeleccionParaComparar(p.id, $any($event.target).checked)" title="Comparar">
+						</td>
+						<td data-label="Parcela">{{ p.parcelaNombre }}</td>
+						<td data-label="Cultivo">{{ p.productoNombre }}</td>
+						<td data-label="Socio">{{ p.socioNombre ?? '—' }}</td>
+						<td class="col-money val-money" data-label="Costo inicial">{{ p.costoInicial | currency:'COP':'symbol-narrow':'1.0-0' }}</td>
+						<td data-label="Inicio">{{ p.fechaInicio | date:'dd/MM/yyyy' }}</td>
+						<td data-label="Est. cosecha">{{ p.fechaEstimadaCosecha ? (p.fechaEstimadaCosecha | date:'dd/MM/yyyy') : '—' }}</td>
+						<td data-label="Estado">
+							<span class="badge" [class]="estadoBadgeClass(p.estado)">{{ p.estado }}</span>
+						</td>
+						<td>
+							<button class="btn btn-ghost btn-sm" (click)="verResumen(p.id)">Ver resumen</button>
+						</td>
+						@if (isAdmin()) {
+							<td>
+								<div class="row-actions">
+									@if (p.estado === 'Activo') {
+										<button class="btn btn-sm btn-outline-warning" title="Cerrar proceso"
+											(click)="openCierre(p.id)">
+											Cerrar
+										</button>
+									}
+									<button class="btn btn-icon btn-ghost" title="Editar"
+										(click)="openEdit(p)">
+										<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+											<path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+											<path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+										</svg>
+									</button>
+									<button class="btn btn-icon btn-ghost btn-danger" title="Eliminar"
+										(click)="confirmDelete(p.id)">
+										<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+											<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>
+										</svg>
+									</button>
+								</div>
+							</td>
+						}
+					</tr>
+				}
+			</tbody>
+		</table>
+	</div>
+}
+
+<!-- Drawer: nuevo / editar proceso -->
+<fc-drawer
+	[title]="editId() ? 'Editar proceso' : 'Nuevo proceso de cultivo'"
+	[open]="drawerOpen()"
+	(closed)="drawerOpen.set(false)">
+	<form [formGroup]="form" (ngSubmit)="save()">
+
+		@if (errorMsg()) {
+			<div class="alert alert-error">{{ errorMsg() }}</div>
+		}
+
+		<div class="form-group">
+			<label class="form-label">Parcela *</label>
+			<select class="form-control" formControlName="parcelaId">
+				<option value="0" disabled>Seleccionar parcela…</option>
+				@for (p of parcelasDeFincaActiva(); track p.id) {
+					<option [value]="p.id">{{ p.nombre }}</option>
+				}
+			</select>
+		</div>
+
+		<div class="form-group">
+			<label class="form-label">Cultivo *</label>
+			<select class="form-control" formControlName="productoId">
+				<option value="0" disabled>Seleccionar cultivo…</option>
+				@for (p of productos(); track p.id) {
+					<option [value]="p.id">{{ p.nombre }}</option>
+				}
+			</select>
+		</div>
+
+		<div class="form-group">
+			<label class="form-label">Socio (opcional)</label>
+			<select class="form-control" formControlName="socioId">
+				<option [ngValue]="null">— Sin socio —</option>
+				@for (s of socios(); track s.id) {
+					<option [value]="s.id">{{ s.nombre }}</option>
+				}
+			</select>
+		</div>
+
+		<div class="form-group">
+			<label class="form-label">Costo inicial (COP) *</label>
+			<input class="form-control" type="number" step="1000" formControlName="costoInicial">
+		</div>
+
+		<div class="form-group">
+			<label class="form-label">Fecha de inicio *</label>
+			<input class="form-control" type="date" formControlName="fechaInicio">
+		</div>
+
+		<div class="form-group">
+			<label class="form-label">Fecha estimada de cosecha</label>
+			<input class="form-control" type="date" formControlName="fechaEstimadaCosecha">
+		</div>
+
+		<div class="form-actions">
+			<button type="button" class="btn btn-ghost" (click)="drawerOpen.set(false)">Cancelar</button>
+			<button type="submit" class="btn btn-primary" [disabled]="form.invalid || saving()">
+				{{ saving() ? 'Guardando…' : 'Guardar' }}
+			</button>
+		</div>
+	</form>
+</fc-drawer>
+
+<!-- Drawer: cerrar proceso -->
+<fc-drawer
+	title="Cerrar proceso de cultivo"
+	[open]="cierreId() !== null"
+	(closed)="cancelCierre()">
+	<form [formGroup]="cierreForm" (ngSubmit)="doCierre()">
+		<div class="form-group">
+			<label class="form-label">Estado de cierre *</label>
+			<select class="form-control" formControlName="estado">
+				<option value="Cosechado">Cosechado — cosecha exitosa</option>
+				<option value="Cerrado">Cerrado — cancelado u otro motivo</option>
+			</select>
+		</div>
+		<div class="form-group">
+			<label class="form-label">Fecha de cierre *</label>
+			<input class="form-control" type="date" formControlName="fechaCierre">
+		</div>
+		<div class="form-actions">
+			<button type="button" class="btn btn-ghost" (click)="cancelCierre()">Cancelar</button>
+			<button type="submit" class="btn btn-primary" [disabled]="cierreForm.invalid">
+				Cerrar proceso
+			</button>
+		</div>
+	</form>
+</fc-drawer>
+
+<fc-confirm-dialog
+	[open]="deleteId() !== null"
+	message="¿Eliminar este proceso de cultivo?"
+	(confirmed)="doDelete()"
+	(cancelled)="cancelDelete()"/>
+
+<fc-drawer title="Resumen del ciclo" [open]="resumenPanelOpen()" (closed)="cerrarResumen()">
+	@if (resumenLoading()) {
+		<p class="text-muted">Cargando…</p>
+	} @else if (resumenError()) {
+		<p class="form-error">{{ resumenError() }}</p>
+	} @else if (resumenProceso(); as r) {
+		<div class="resumen-header">
+			<h3>{{ r.parcelaNombre }} — {{ r.productoNombre }}</h3>
+			<span class="badge" [class]="estadoBadgeClass(r.estado)">{{ r.estado }}</span>
+		</div>
+		<p class="text-muted resumen-fechas">
+			Inicio: {{ r.fechaInicio | date:'dd/MM/yyyy' }}
+			@if (r.fechaEstimadaCosecha) { · Est. cosecha: {{ r.fechaEstimadaCosecha | date:'dd/MM/yyyy' }} }
+			@if (r.fechaCierre) { · Cierre: {{ r.fechaCierre | date:'dd/MM/yyyy' }} }
+		</p>
+
+		<div class="resumen-kpis">
+			<div class="resumen-kpi">
+				<span class="resumen-kpi-label">Ingresos (ventas de este ciclo)</span>
+				<span class="resumen-kpi-val kpi-pos">{{ r.totalIngresos | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
+			</div>
+			<div class="resumen-kpi">
+				<span class="resumen-kpi-label">Compras + costo inicial</span>
+				<span class="resumen-kpi-val">{{ r.totalCompras | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
+				<span class="resumen-kpi-sub">Costo inicial: {{ r.costoInicial | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
+			</div>
+			<div class="resumen-kpi">
+				<span class="resumen-kpi-label">Mano de obra (actividades de este ciclo)</span>
+				<span class="resumen-kpi-val">{{ r.totalManoObra | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
+			</div>
+			<div class="resumen-kpi" [class.kpi-negativo]="r.utilidad < 0">
+				<span class="resumen-kpi-label">Utilidad del ciclo</span>
+				<span class="resumen-kpi-val" [class.kpi-neg]="r.utilidad < 0" [class.kpi-pos]="r.utilidad >= 0">
+					{{ r.utilidad | currency:'COP':'symbol-narrow':'1.0-0' }}
+				</span>
+			</div>
+		</div>
+
+		<p class="form-hint resumen-nota">
+			Solo se cuentan las compras, ventas y actividades registradas contra este ciclo específico
+			(se asignan automáticamente al proceso activo de la parcela al momento de crearlas).
+		</p>
+	}
+</fc-drawer>
+
+<fc-drawer title="Comparar ciclos" [open]="comparacionPanelOpen()" (closed)="cerrarComparacion()">
+	@if (comparacionLoading()) {
+		<p class="text-muted">Cargando…</p>
+	} @else if (comparacionError()) {
+		<p class="form-error">{{ comparacionError() }}</p>
+	} @else if (comparacion().length > 0) {
+		<div class="data-table-wrap cards-on-mobile">
+			<table class="data-table">
+				<thead>
+					<tr>
+						<th>Métrica</th>
+						@for (c of comparacion(); track c.procesoCultivoId) {
+							<th>{{ c.parcelaNombre }} — {{ c.productoNombre }}</th>
+						}
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td data-label="Métrica"><strong>Estado</strong></td>
+						@for (c of comparacion(); track c.procesoCultivoId) {
+							<td [attr.data-label]="c.parcelaNombre">
+								<span class="badge" [class]="estadoBadgeClass(c.estado)">{{ c.estado }}</span>
+							</td>
+						}
+					</tr>
+					<tr>
+						<td data-label="Métrica"><strong>Costo inicial</strong></td>
+						@for (c of comparacion(); track c.procesoCultivoId) {
+							<td class="val-money" [attr.data-label]="c.parcelaNombre">{{ c.costoInicial | currency:'COP':'symbol-narrow':'1.0-0' }}</td>
+						}
+					</tr>
+					<tr>
+						<td data-label="Métrica"><strong>Ingresos</strong></td>
+						@for (c of comparacion(); track c.procesoCultivoId) {
+							<td class="val-money" [attr.data-label]="c.parcelaNombre">{{ c.totalIngresos | currency:'COP':'symbol-narrow':'1.0-0' }}</td>
+						}
+					</tr>
+					<tr>
+						<td data-label="Métrica"><strong>Compras + costo inicial</strong></td>
+						@for (c of comparacion(); track c.procesoCultivoId) {
+							<td class="val-money" [attr.data-label]="c.parcelaNombre">{{ c.totalCompras | currency:'COP':'symbol-narrow':'1.0-0' }}</td>
+						}
+					</tr>
+					<tr>
+						<td data-label="Métrica"><strong>Mano de obra</strong></td>
+						@for (c of comparacion(); track c.procesoCultivoId) {
+							<td class="val-money" [attr.data-label]="c.parcelaNombre">{{ c.totalManoObra | currency:'COP':'symbol-narrow':'1.0-0' }}</td>
+						}
+					</tr>
+					<tr>
+						<td data-label="Métrica"><strong>Utilidad</strong></td>
+						@for (c of comparacion(); track c.procesoCultivoId) {
+							<td [attr.data-label]="c.parcelaNombre">
+								<strong [class.kpi-neg]="c.utilidad < 0" [class.kpi-pos]="c.utilidad >= 0">
+									{{ c.utilidad | currency:'COP':'symbol-narrow':'1.0-0' }}
+								</strong>
+							</td>
+						}
+					</tr>
+				</tbody>
+			</table>
+		</div>
+	}
+</fc-drawer>

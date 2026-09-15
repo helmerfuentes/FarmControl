@@ -1,0 +1,61 @@
+<div class="page">
+	<div class="page-header">
+		<div>
+			<h1>Mis actividades</h1>
+			<p>Estas son las actividades que te asignaron. Marca cada una como realizada cuando termines.</p>
+		</div>
+	</div>
+
+	<div class="fecha-selector">
+		<label class="form-label" for="fecha-mis-actividades">Fecha</label>
+		<input id="fecha-mis-actividades" class="form-control" type="date"
+			[ngModel]="fecha()" (ngModelChange)="onFechaChange($event)">
+	</div>
+
+	@if (loading()) {
+		<fc-table-skeleton [rows]="3" [cols]="1" />
+	} @else if (items().length === 0) {
+		<fc-empty-state title="No tienes actividades asignadas para este día." message="Cuando te asignen una labor, aparecerá aquí." />
+	} @else {
+		<div class="actividades-list">
+			@for (item of items(); track item.id) {
+				<div class="actividad-card" [class.confirmada]="item.confirmada">
+					<div class="actividad-card-header" (click)="toggleExpandido(item.id)">
+						<div>
+							<span class="badge badge-insumo">{{ item.tipoActividad }}</span>
+							<strong class="actividad-parcela">{{ item.parcelaNombre }}</strong>
+							<span class="text-muted"> — {{ item.fincaNombre }}</span>
+						</div>
+						@if (item.confirmada) {
+							<span class="badge badge-socio" [title]="'Confirmada el ' + (item.fechaConfirmacion | date:'dd/MM/yyyy HH:mm')">
+								✓ Realizada
+							</span>
+						}
+					</div>
+
+					@if (item.descripcion) {
+						<p class="actividad-descripcion">{{ item.descripcion }}</p>
+					}
+
+					<div class="actividad-horario text-muted">
+						{{ item.fechaInicio | date:"HH:mm" }}
+						@if (item.fechaFin) { — {{ item.fechaFin | date:"HH:mm" }} }
+					</div>
+
+					@if (!item.confirmada) {
+						<button type="button" class="btn btn-primary btn-sm" [disabled]="confirmandoId() === item.id"
+							(click)="marcarRealizada(item)">
+							{{ confirmandoId() === item.id ? 'Guardando…' : 'Marcar como realizada' }}
+						</button>
+					}
+
+					@if (expandidoId() === item.id) {
+						<fc-comentarios-panel tipoEntidad="Actividad" [entidadId]="item.id" />
+					} @else {
+						<button type="button" class="btn btn-ghost btn-sm" (click)="toggleExpandido(item.id)">Ver notas</button>
+					}
+				</div>
+			}
+		</div>
+	}
+</div>

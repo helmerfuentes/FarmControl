@@ -1,0 +1,94 @@
+<div class="page">
+	<div class="page-header">
+		<div>
+			<h1>Asistencia</h1>
+			<p>Registro diario de entrada y salida de jornaleros por finca.</p>
+		</div>
+		<div class="page-actions">
+			<input type="date" class="form-control" [value]="filtroFecha()" (change)="onFiltroFechaChange($any($event.target).value)" />
+			<button class="btn btn-primary" (click)="openNew()">Registrar asistencia</button>
+		</div>
+	</div>
+
+	@if (loading()) {
+		<fc-table-skeleton [rows]="6" [cols]="5" />
+	} @else if (items().length === 0) {
+		<fc-empty-state title="No hay asistencias registradas." message="Registra la entrada y salida de un jornalero con el botón de arriba."></fc-empty-state>
+	} @else {
+		<div class="data-table-wrap cards-on-mobile">
+			<table class="data-table">
+				<thead>
+					<tr>
+						<th>Fecha</th>
+						<th>Jornalero</th>
+						<th>Finca</th>
+						<th>Entrada</th>
+						<th>Salida</th>
+						<th></th>
+					</tr>
+				</thead>
+				<tbody>
+					@for (item of items(); track item.id) {
+						<tr>
+							<td data-label="Fecha">{{ item.fecha | date:'dd/MM/yyyy' }}</td>
+							<td data-label="Jornalero">{{ item.personaNombre }}</td>
+							<td class="text-muted" data-label="Finca">{{ item.fincaNombre }}</td>
+							<td data-label="Entrada">{{ item.horaEntrada ?? '—' }}</td>
+							<td data-label="Salida">
+								@if (item.horaSalida) {
+									{{ item.horaSalida }}
+								} @else {
+									<button class="btn btn-ghost btn-sm" (click)="registrarSalida(item)">Registrar salida</button>
+								}
+							</td>
+							<td class="actions-cell" data-label="">
+								<button class="btn btn-icon" (click)="confirmDelete(item.id)" aria-label="Eliminar">
+									<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3M4 7h16"/></svg>
+								</button>
+							</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		</div>
+	}
+</div>
+
+<fc-drawer [title]="'Registrar asistencia'" [open]="panelOpen()" (closed)="closePanel()">
+	<form [formGroup]="form" (ngSubmit)="save()" class="form">
+		<label>Jornalero
+			<select formControlName="personaId">
+				<option [ngValue]="0">Selecciona...</option>
+				@for (p of personas(); track p.id) {
+					<option [ngValue]="p.id">{{ p.nombre }}</option>
+				}
+			</select>
+		</label>
+		<label>Finca
+			<select formControlName="fincaId">
+				<option [ngValue]="0">Selecciona...</option>
+				@for (f of fincas(); track f.id) {
+					<option [ngValue]="f.id">{{ f.nombre }}</option>
+				}
+			</select>
+		</label>
+		<label>Fecha
+			<input type="date" formControlName="fecha" />
+		</label>
+		<label>Hora de entrada
+			<input type="time" formControlName="horaEntrada" />
+		</label>
+		<label>Hora de salida
+			<input type="time" formControlName="horaSalida" />
+		</label>
+		<label>Observación
+			<textarea formControlName="observacion" rows="2"></textarea>
+		</label>
+		<div class="form-actions">
+			<button type="button" class="btn btn-ghost" (click)="closePanel()">Cancelar</button>
+			<button type="submit" class="btn btn-primary" [disabled]="form.invalid || saving()">Guardar</button>
+		</div>
+	</form>
+</fc-drawer>
+
+<fc-confirm-dialog [open]="deleteId() !== null" message="¿Eliminar este registro de asistencia?" (confirmed)="doDelete()" (cancelled)="cancelDelete()" />

@@ -1,0 +1,105 @@
+<div class="page">
+	<div class="page-header">
+		<div>
+			<h1>Tipos de Insumo</h1>
+			<p>Categorías para clasificar los insumos agrícolas (fertilizante, fungicida, herbicida, insecticida, etc.), usadas al registrar cada insumo en el Inventario.</p>
+		</div>
+		@if (isAdmin()) {
+			<div class="page-actions">
+				<button class="btn btn-primary" (click)="openNew()">
+					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+						<path d="M12 5v14M5 12h14"/>
+					</svg>
+					Nuevo tipo
+				</button>
+			</div>
+		}
+	</div>
+
+	@if (deleteErrorMsg()) {
+		<p class="form-error">{{ deleteErrorMsg() }}</p>
+	}
+
+	@if (loading()) {
+		<fc-table-skeleton [rows]="6" [cols]="3" />
+	} @else if (items().length === 0) {
+		<fc-empty-state title="No hay tipos de insumo registrados." message="Crea las categorías de insumos (fertilizantes, fungicidas, semillas…) antes de registrar insumos concretos.">
+			@if (isAdmin()) {
+				<button class="btn btn-primary" (click)="openNew()">Nuevo tipo</button>
+			}
+		</fc-empty-state>
+	} @else {
+		<app-table-controls
+			[total]="totalFiltered()"
+			[page]="page()"
+			[pageSize]="pageSize()"
+			(searchChange)="onSearch($event)"
+			(pageChange)="onPageChange($event)"
+			(pageSizeChange)="onPageSizeChange($event)" />
+		<div class="data-table-wrap cards-on-mobile">
+			<table class="data-table">
+				<thead>
+					<tr>
+						<th>Nombre</th>
+						<th>Descripción</th>
+						@if (isAdmin()) { <th></th> }
+					</tr>
+				</thead>
+				<tbody>
+					@for (item of pageItems(); track item.id) {
+						<tr (click)="openEdit(item)">
+							<td data-label="Nombre">{{ item.nombre }}</td>
+							<td class="col-desc" data-label="Descripción">{{ item.descripcion }}</td>
+							@if (isAdmin()) {
+								<td>
+									<div class="row-actions">
+										<button class="btn btn-icon btn-ghost" title="Eliminar"
+											(click)="$event.stopPropagation(); confirmDelete(item.id)">
+											<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+												<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>
+											</svg>
+										</button>
+									</div>
+								</td>
+							}
+						</tr>
+					}
+				</tbody>
+			</table>
+		</div>
+	}
+</div>
+
+<fc-drawer [title]="drawerTitle()" [open]="panelOpen()" (closed)="closePanel()">
+	<form [formGroup]="form" (ngSubmit)="save()">
+		<div class="form-group">
+			<label class="form-label">Nombre *</label>
+			<input class="form-control" formControlName="nombre" placeholder="Ej: Fertilizante">
+			@if (form.get('nombre')?.invalid && form.get('nombre')?.touched) {
+				<span class="form-error">El nombre es requerido</span>
+			}
+		</div>
+
+		<div class="form-group">
+			<label class="form-label">Descripción *</label>
+			<textarea class="form-control" formControlName="descripcion" rows="3"
+				placeholder="Descripción del tipo de insumo"></textarea>
+			@if (form.get('descripcion')?.invalid && form.get('descripcion')?.touched) {
+				<span class="form-error">La descripción es requerida</span>
+			}
+		</div>
+
+		<div class="form-actions">
+			<button type="button" class="btn btn-ghost" (click)="closePanel()">Cancelar</button>
+			<button type="submit" class="btn btn-primary" [disabled]="form.invalid || saving()">
+				{{ saving() ? 'Guardando…' : 'Guardar' }}
+			</button>
+		</div>
+	</form>
+</fc-drawer>
+
+<fc-confirm-dialog
+	[open]="deleteId() !== null"
+	message="¿Eliminar este tipo de insumo? Los insumos asociados quedarán sin categoría."
+	(confirmed)="doDelete()"
+	(cancelled)="cancelDelete()"/>

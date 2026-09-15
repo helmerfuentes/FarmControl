@@ -1,0 +1,383 @@
+<div class="page">
+	<div class="page-header">
+		<div>
+			<h1>Inventario</h1>
+			<p>Catálogo de insumos agrícolas (fertilizantes, fungicidas, semillas, etc.) y el kardex de entradas/salidas de cada uno por parcela.</p>
+		</div>
+		@if (isAdmin() && (tab() === 'insumos' || tab() === 'movimientos')) {
+			<div class="page-actions">
+				@if (tab() === 'insumos') {
+					<button class="btn btn-primary" (click)="openNewInsumo()">
+						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+						Nuevo insumo
+					</button>
+				} @else {
+					<button class="btn btn-ghost" (click)="openNewTransferencia()">
+						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3l4 4-4 4M7 21l-4-4 4-4M21 7H7a4 4 0 00-4 4M3 17h14a4 4 0 004-4"/></svg>
+						Transferir
+					</button>
+					<button class="btn btn-primary" (click)="openNewMovimiento()">
+						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+						Registrar movimiento
+					</button>
+				}
+			</div>
+		}
+	</div>
+
+	<div class="tabs">
+		<button class="tab-btn" [class.active]="tab() === 'insumos'" (click)="setTab('insumos')">Insumos</button>
+		<button class="tab-btn" [class.active]="tab() === 'movimientos'" (click)="setTab('movimientos')">Movimientos</button>
+		<button class="tab-btn" [class.active]="tab() === 'saldos'" (click)="setTab('saldos')">Saldo actual</button>
+		<button class="tab-btn" [class.active]="tab() === 'precios'" (click)="setTab('precios')">Historial de precios</button>
+	</div>
+
+	@if (deleteErrorMsg()) {
+		<p class="form-error">{{ deleteErrorMsg() }}</p>
+	}
+
+	@if (loading()) {
+		<fc-table-skeleton [rows]="6" [cols]="5" />
+	} @else if (tab() === 'insumos') {
+		@if (insumos().length === 0) {
+			<fc-empty-state title="No hay insumos registrados." message="Registra los insumos agrícolas que compras y usas (fertilizantes, fungicidas, semillas…).">
+				@if (isAdmin()) {
+					<button class="btn btn-primary" (click)="openNewInsumo()">Nuevo insumo</button>
+				}
+			</fc-empty-state>
+		} @else {
+			<app-table-controls
+				[total]="totalInsumos()"
+				[page]="pageInsumos()"
+				[pageSize]="pageSizeInsumos()"
+				(searchChange)="onSearchInsumos($event)"
+				(pageChange)="onPageInsumos($event)"
+				(pageSizeChange)="onPageSizeInsumos($event)" />
+			<div class="data-table-wrap cards-on-mobile">
+				<table class="data-table">
+					<thead>
+						<tr>
+							<th>Insumo</th>
+							<th>Tipo</th>
+							<th>Marca</th>
+							<th>Precio unitario</th>
+							<th>Unidad</th>
+							@if (isAdmin()) { <th></th> }
+						</tr>
+					</thead>
+					<tbody>
+						@for (item of pageInsumosItems(); track item.id) {
+							<tr (click)="openEditInsumo(item)">
+								<td data-label="Insumo"><strong>{{ item.nombre }}</strong></td>
+								<td data-label="Tipo"><span class="badge badge-insumo">{{ item.tipoInsumoNombre }}</span></td>
+								<td class="text-muted" data-label="Marca">{{ item.marca || '—' }}</td>
+								<td class="val-money" data-label="Precio unitario">{{ item.precioUnitario | currency:'COP':'symbol-narrow':'1.0-0' }}</td>
+								<td class="text-muted" data-label="Unidad">{{ item.unidadMedida }}</td>
+								@if (isAdmin()) {
+									<td>
+										<div class="row-actions">
+											<button class="btn btn-icon btn-ghost" title="Eliminar"
+												(click)="$event.stopPropagation(); confirmDelete(item.id)">
+												<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+													<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>
+												</svg>
+											</button>
+										</div>
+									</td>
+								}
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+		}
+	} @else if (tab() === 'movimientos') {
+		@if (movimientos().length === 0) {
+			<fc-empty-state title="No hay movimientos registrados." message="Registra entradas y salidas de insumos por parcela para llevar su kardex.">
+				@if (isAdmin()) {
+					<button class="btn btn-primary" (click)="openNewMovimiento()">Registrar movimiento</button>
+				}
+			</fc-empty-state>
+		} @else {
+			<app-table-controls
+				[total]="totalMov()"
+				[page]="pageMov()"
+				[pageSize]="pageSizeMov()"
+				(searchChange)="onSearchMov($event)"
+				(pageChange)="onPageMov($event)"
+				(pageSizeChange)="onPageSizeMov($event)" />
+			<div class="data-table-wrap cards-on-mobile">
+				<table class="data-table">
+					<thead>
+						<tr>
+							<th>Fecha</th>
+							<th>Insumo</th>
+							<th>Parcela</th>
+							<th>Tipo</th>
+							<th>Cantidad</th>
+							<th>Observación</th>
+						</tr>
+					</thead>
+					<tbody>
+						@for (m of pageMovItems(); track m.id) {
+							<tr>
+								<td data-label="Fecha">{{ m.fecha | date:'dd/MM/yyyy' }}</td>
+								<td data-label="Insumo">{{ m.insumoNombre }}</td>
+								<td class="text-muted" data-label="Parcela">{{ m.parcelaNombre }}</td>
+								<td data-label="Tipo"><span [class]="'badge badge-' + m.tipoMovimiento.toLowerCase()">{{ m.tipoMovimiento }}</span></td>
+								<td data-label="Cantidad">{{ m.cantidad }}</td>
+								<td class="text-muted" data-label="Observación">{{ m.observacion || '—' }}</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+		}
+	} @else if (tab() === 'saldos') {
+		@if (loadingSaldos()) {
+			<fc-table-skeleton [rows]="6" [cols]="6" />
+		} @else if (saldos().length === 0) {
+			<fc-empty-state title="No hay saldos para mostrar." message="Registra insumos y movimientos de entrada/salida para ver aquí el stock disponible."></fc-empty-state>
+		} @else {
+			<div class="data-table-wrap cards-on-mobile">
+				<table class="data-table">
+					<thead>
+						<tr>
+							<th>Insumo</th>
+							<th>Unidad</th>
+							<th>Entradas</th>
+							<th>Salidas</th>
+							<th>Saldo actual</th>
+							<th>Estado</th>
+						</tr>
+					</thead>
+					<tbody>
+						@for (s of saldos(); track s.insumoId) {
+							<tr>
+								<td data-label="Insumo"><strong>{{ s.insumoNombre }}</strong></td>
+								<td class="text-muted" data-label="Unidad">{{ s.unidadMedida }}</td>
+								<td class="text-muted" data-label="Entradas">{{ s.entradas }}</td>
+								<td class="text-muted" data-label="Salidas">{{ s.salidas }}</td>
+								<td data-label="Saldo actual">
+									<strong [class.text-error]="s.saldo < 0">{{ s.saldo }} {{ s.unidadMedida }}</strong>
+								</td>
+								<td data-label="Estado">
+									@if (s.saldoBajo) {
+										<span class="badge badge-admin">Saldo bajo</span>
+									} @else if (s.stockMinimo !== null) {
+										<span class="badge badge-socio">OK (mín. {{ s.stockMinimo }})</span>
+									} @else {
+										<span class="text-muted">—</span>
+									}
+								</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+		}
+	} @else {
+		<div class="precios-select-wrap">
+			<label class="form-label">Insumo</label>
+			<select class="form-control precios-select" (change)="onSelectInsumoPrecios($any($event.target).value)">
+				<option value="">Seleccionar insumo…</option>
+				@for (i of insumos(); track i.id) {
+					<option [value]="i.id">{{ i.nombre }}</option>
+				}
+			</select>
+		</div>
+
+		@if (loadingPrecios()) {
+			<p class="table-empty">Cargando…</p>
+		} @else if (selectedInsumoIdPrecios() !== null && (!historialPrecio() || historialPrecio()!.porMes.length === 0)) {
+			<fc-empty-state title="Sin historial de precios." message="Registra movimientos de entrada con precio unitario para ver aquí la evolución de precios de este insumo."></fc-empty-state>
+		} @else if (historialPrecio(); as h) {
+			<div class="data-table-wrap cards-on-mobile">
+				<table class="data-table">
+					<thead>
+						<tr>
+							<th>Mes</th>
+							<th>Precio promedio</th>
+							<th>Mínimo</th>
+							<th>Máximo</th>
+							<th># Compras</th>
+						</tr>
+					</thead>
+					<tbody>
+						@for (m of h.porMes; track m.anio + '-' + m.mes) {
+							<tr>
+								<td data-label="Mes">{{ m.mes }}/{{ m.anio }}</td>
+								<td class="val-money" data-label="Precio promedio">{{ m.precioPromedio | currency:'COP':'symbol-narrow':'1.0-0' }}</td>
+								<td class="text-muted" data-label="Mínimo">{{ m.precioMin | currency:'COP':'symbol-narrow':'1.0-0' }}</td>
+								<td class="text-muted" data-label="Máximo">{{ m.precioMax | currency:'COP':'symbol-narrow':'1.0-0' }}</td>
+								<td class="text-muted" data-label="# Compras">{{ m.numCompras }}</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+		}
+	}
+</div>
+
+<fc-drawer [title]="drawerTitle()" [open]="panelOpen()" (closed)="closePanel()">
+	@if (panelMode() === 'insumo') {
+		<form [formGroup]="insumoForm" (ngSubmit)="saveInsumo()">
+			<div class="form-group">
+				<label class="form-label">Tipo de insumo *</label>
+				<select class="form-control" formControlName="tipoInsumoId">
+					<option value="0" disabled>Seleccionar tipo…</option>
+					@for (t of tipos(); track t.id) {
+						<option [value]="t.id">{{ t.nombre }}</option>
+					}
+				</select>
+			</div>
+			<div class="form-group">
+				<label class="form-label">Nombre *</label>
+				<input class="form-control" formControlName="nombre" placeholder="Ej: Abono 20-20-20">
+			</div>
+			<div class="form-group">
+				<label class="form-label">Marca</label>
+				<input class="form-control" formControlName="marca" placeholder="Ej: Yara">
+			</div>
+			<div class="form-group">
+				<label class="form-label">Descripción</label>
+				<textarea class="form-control" formControlName="descripcion" rows="2"></textarea>
+			</div>
+			<div class="form-group">
+				<label class="form-label">Precio unitario (COP) *</label>
+				<input class="form-control" type="number" step="100" formControlName="precioUnitario">
+			</div>
+			<div class="form-group">
+				<label class="form-label">Unidad de medida *</label>
+				<input class="form-control" formControlName="unidadMedida" placeholder="Ej: kg, litro, bulto">
+			</div>
+			<div class="form-group">
+				<label class="form-label">Stock mínimo</label>
+				<input class="form-control" type="number" step="1" min="0" formControlName="stockMinimo">
+				<span class="form-hint">Opcional. Si el saldo cae a este nivel o menos, se marcará como bajo en "Saldo actual".</span>
+			</div>
+			<div class="form-group">
+				<label class="form-label">Fecha de vencimiento</label>
+				<input class="form-control" type="date" formControlName="fechaVencimiento">
+				<span class="form-hint">Opcional. Se generará una alerta cuando esté próximo a vencer o ya haya vencido.</span>
+			</div>
+			<div class="form-actions">
+				<button type="button" class="btn btn-ghost" (click)="closePanel()">Cancelar</button>
+				<button type="submit" class="btn btn-primary" [disabled]="insumoForm.invalid || saving()">
+					{{ saving() ? 'Guardando…' : 'Guardar' }}
+				</button>
+			</div>
+		</form>
+	} @else if (panelMode() === 'movimiento') {
+		<form [formGroup]="movForm" (ngSubmit)="saveMovimiento()">
+			<div class="form-group">
+				<label class="form-label">Tipo de movimiento *</label>
+				<select class="form-control" formControlName="tipoMovimiento" (change)="onTipoMovimientoChange($any($event.target).value)">
+					<option value="Entrada">Entrada</option>
+					<option value="Salida">Salida</option>
+				</select>
+			</div>
+			<div class="form-group">
+				<label class="form-label">Insumo *</label>
+				<select class="form-control" formControlName="insumoId">
+					<option value="0" disabled>Seleccionar insumo…</option>
+					@for (i of insumos(); track i.id) {
+						<option [value]="i.id">{{ i.nombre }}</option>
+					}
+				</select>
+			</div>
+			<div class="form-group">
+				<label class="form-label">Parcela *</label>
+				<select class="form-control" formControlName="parcelaId">
+					<option value="0" disabled>Seleccionar parcela…</option>
+					@for (p of parcelasDeFincaActiva(); track p.id) {
+						<option [value]="p.id">{{ p.nombre }}</option>
+					}
+				</select>
+			</div>
+			<div class="form-group">
+				<label class="form-label">Cantidad *</label>
+				<input class="form-control" type="number" step="0.01" formControlName="cantidad">
+			</div>
+			<div class="form-group">
+				<label class="form-label">Fecha *</label>
+				<input class="form-control" type="date" formControlName="fecha">
+			</div>
+			@if (tipoMovimientoActual() === 'Entrada') {
+				<div class="form-group">
+					<label class="form-label">Precio unitario de compra (COP)</label>
+					<input class="form-control" type="number" step="100" min="0" formControlName="precioUnitario">
+					<span class="form-hint">Opcional. Regístralo para llevar el historial de precios de este insumo.</span>
+				</div>
+			}
+			<div class="form-group">
+				<label class="form-label">Observación</label>
+				<textarea class="form-control" formControlName="observacion" rows="2"></textarea>
+			</div>
+			<div class="form-actions">
+				<button type="button" class="btn btn-ghost" (click)="closePanel()">Cancelar</button>
+				<button type="submit" class="btn btn-primary" [disabled]="movForm.invalid || saving()">
+					{{ saving() ? 'Guardando…' : 'Guardar' }}
+				</button>
+			</div>
+		</form>
+	} @else {
+		<form [formGroup]="transferForm" (ngSubmit)="saveTransferencia()">
+			@if (transferErrorMsg()) {
+				<p class="form-error">{{ transferErrorMsg() }}</p>
+			}
+			<div class="form-group">
+				<label class="form-label">Insumo *</label>
+				<select class="form-control" formControlName="insumoId">
+					<option value="0" disabled>Seleccionar insumo…</option>
+					@for (i of insumos(); track i.id) {
+						<option [value]="i.id">{{ i.nombre }}</option>
+					}
+				</select>
+			</div>
+			<div class="form-group">
+				<label class="form-label">Parcela origen *</label>
+				<select class="form-control" formControlName="parcelaOrigenId">
+					<option value="0" disabled>Seleccionar parcela…</option>
+					@for (p of parcelas(); track p.id) {
+						<option [value]="p.id">{{ p.fincaNombre }} — {{ p.nombre }}</option>
+					}
+				</select>
+			</div>
+			<div class="form-group">
+				<label class="form-label">Parcela destino *</label>
+				<select class="form-control" formControlName="parcelaDestinoId">
+					<option value="0" disabled>Seleccionar parcela…</option>
+					@for (p of parcelas(); track p.id) {
+						<option [value]="p.id">{{ p.fincaNombre }} — {{ p.nombre }}</option>
+					}
+				</select>
+			</div>
+			<div class="form-group">
+				<label class="form-label">Cantidad *</label>
+				<input class="form-control" type="number" step="0.01" formControlName="cantidad">
+			</div>
+			<div class="form-group">
+				<label class="form-label">Fecha *</label>
+				<input class="form-control" type="date" formControlName="fecha">
+			</div>
+			<div class="form-group">
+				<label class="form-label">Observación</label>
+				<textarea class="form-control" formControlName="observacion" rows="2"></textarea>
+			</div>
+			<div class="form-actions">
+				<button type="button" class="btn btn-ghost" (click)="closePanel()">Cancelar</button>
+				<button type="submit" class="btn btn-primary" [disabled]="transferForm.invalid || saving()">
+					{{ saving() ? 'Transfiriendo…' : 'Transferir' }}
+				</button>
+			</div>
+		</form>
+	}
+</fc-drawer>
+
+<fc-confirm-dialog
+	[open]="deleteId() !== null"
+	message="¿Eliminar este insumo del catálogo?"
+	(confirmed)="doDelete()"
+	(cancelled)="cancelDelete()"/>

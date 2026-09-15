@@ -1,0 +1,192 @@
+<div class="page">
+	<div class="page-header">
+		<div>
+			<h1>Inicio</h1>
+			<p>Hola{{ usuario() ? ', ' + usuario() : '' }} — un vistazo rápido a lo que necesita tu atención hoy.</p>
+		</div>
+	</div>
+
+	<div class="hoy-panel">
+		<div class="dash-card-header">
+			<h2>Hoy</h2>
+		</div>
+		@if (loadingHoy()) {
+			<p class="dash-loading">Cargando…</p>
+		} @else if (nadaPendienteHoy()) {
+			<p class="dash-empty">Nada pendiente hoy. 🎉</p>
+		} @else {
+			<div class="hoy-grid">
+				<div class="hoy-col">
+					<h3>Actividades de hoy</h3>
+					@if (actividadesHoy().length === 0) {
+						<p class="dash-empty">Sin actividades pendientes hoy.</p>
+					} @else {
+						<ul class="dash-list">
+							@for (a of actividadesHoy(); track a.id) {
+								<li>
+									<div>
+										<strong>{{ a.tipoActividad }}</strong>
+										<span class="text-muted"> — {{ a.parcelaNombre }}</span>
+									</div>
+								</li>
+							}
+						</ul>
+					}
+					<a routerLink="/app/actividades" class="dash-link">Ver actividades →</a>
+				</div>
+
+				<div class="hoy-col">
+					<h3>Tareas por hacer</h3>
+					@if (tareasVencidas().length === 0) {
+						<p class="dash-empty">Sin tareas recurrentes vencidas.</p>
+					} @else {
+						<ul class="dash-list">
+							@for (t of tareasVencidas(); track t.id) {
+								<li>
+									<div>
+										<strong>{{ t.descripcion }}</strong>
+										<span class="text-muted"> — {{ t.parcelaNombre }}</span>
+									</div>
+									<span class="dash-date">{{ t.proximaFecha | date:'dd/MM/yyyy' }}</span>
+								</li>
+							}
+						</ul>
+					}
+					<a routerLink="/app/fincas" class="dash-link">Ver fincas →</a>
+				</div>
+
+				<div class="hoy-col">
+					<h3>Movimientos de hoy</h3>
+					<ul class="dash-list">
+						<li>
+							<span>Ventas</span>
+							<span class="dash-date">{{ ventasHoy().length }} · {{ totalVentasHoy() | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
+						</li>
+						<li>
+							<span>Compras</span>
+							<span class="dash-date">{{ comprasHoy().length }} · {{ totalComprasHoy() | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
+						</li>
+					</ul>
+				</div>
+			</div>
+		}
+	</div>
+
+	<div class="kpi-row-header">
+		<h2>Indicadores</h2>
+		<button type="button" class="btn btn-outline btn-sm" (click)="abrirPersonalizar()">Personalizar ⚙</button>
+	</div>
+
+	@if (loadingKpis()) {
+		<p class="dash-loading">Cargando indicadores…</p>
+	} @else {
+		<div class="kpi-row">
+			@for (kpi of kpisVisibles(); track kpi.id) {
+				<div class="kpi-tile">
+					<span class="kpi-label">{{ kpi.label }}</span>
+					@if (kpi.tipo === 'moneda') {
+						<span class="kpi-valor">{{ kpi.valor() | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
+					} @else {
+						<span class="kpi-valor">{{ kpi.valor() }}</span>
+					}
+				</div>
+			}
+		</div>
+	}
+
+	@if (personalizarAbierto()) {
+		<div class="personalizar-overlay" (click)="cerrarPersonalizar()">
+			<div class="personalizar-panel" (click)="$event.stopPropagation()">
+				<h3>Elige qué indicadores mostrar</h3>
+				<ul class="personalizar-lista">
+					@for (kpi of kpiCatalog; track kpi.id) {
+						<li>
+							<label>
+								<input
+									type="checkbox"
+									[checked]="kpisEnEdicion().has(kpi.id)"
+									(change)="toggleKpiEdicion(kpi.id, $any($event.target).checked)">
+								{{ kpi.label }}
+							</label>
+						</li>
+					}
+				</ul>
+				<div class="personalizar-acciones">
+					<button type="button" class="btn btn-outline btn-sm" (click)="cerrarPersonalizar()">Cancelar</button>
+					<button type="button" class="btn btn-primary btn-sm" (click)="guardarPersonalizacion()">Guardar</button>
+				</div>
+			</div>
+		</div>
+	}
+
+	<div class="dashboard-grid">
+		<div class="dash-card">
+			<div class="dash-card-header">
+				<h2>Cosechas próximas</h2>
+				<a routerLink="/app/procesos-cultivo" class="dash-link">Ver todos →</a>
+			</div>
+			@if (loadingCosechas()) {
+				<p class="dash-loading">Cargando…</p>
+			} @else if (proximasCosechas().length === 0) {
+				<p class="dash-empty">No hay cosechas estimadas en los próximos 15 días.</p>
+			} @else {
+				<ul class="dash-list">
+					@for (p of proximasCosechas(); track p.id) {
+						<li>
+							<div>
+								<strong>{{ p.parcelaNombre }}</strong>
+								<span class="text-muted"> — {{ p.productoNombre }}</span>
+							</div>
+							<span class="dash-date">{{ p.fechaEstimadaCosecha | date:'dd/MM/yyyy' }}</span>
+						</li>
+					}
+				</ul>
+			}
+		</div>
+
+		<div class="dash-card">
+			<div class="dash-card-header">
+				<h2>Insumos con saldo bajo</h2>
+				<a routerLink="/app/inventario" class="dash-link">Ver inventario →</a>
+			</div>
+			@if (loadingSaldos()) {
+				<p class="dash-loading">Cargando…</p>
+			} @else if (insumosBajos().length === 0) {
+				<p class="dash-empty">Ningún insumo está por debajo de su stock mínimo.</p>
+			} @else {
+				<ul class="dash-list">
+					@for (s of insumosBajos(); track s.insumoId) {
+						<li>
+							<strong>{{ s.insumoNombre }}</strong>
+							<span class="dash-alert">{{ s.saldo }} {{ s.unidadMedida }} (mín. {{ s.stockMinimo }})</span>
+						</li>
+					}
+				</ul>
+			}
+		</div>
+
+		<div class="dash-card dash-card-wide">
+			<div class="dash-card-header">
+				<h2>Últimas actividades</h2>
+				<a routerLink="/app/actividades" class="dash-link">Ver todas →</a>
+			</div>
+			@if (loadingActividades()) {
+				<p class="dash-loading">Cargando…</p>
+			} @else if (ultimasActividades().length === 0) {
+				<p class="dash-empty">Todavía no se han registrado actividades.</p>
+			} @else {
+				<ul class="dash-list">
+					@for (a of ultimasActividades(); track a.id) {
+						<li>
+							<div>
+								<strong>{{ a.tipoActividad }}</strong>
+								<span class="text-muted"> — {{ a.parcelaNombre }} ({{ a.fincaNombre }})</span>
+							</div>
+							<span class="dash-date">{{ a.fechaInicio | date:'dd/MM/yyyy' }}</span>
+						</li>
+					}
+				</ul>
+			}
+		</div>
+	</div>
+</div>

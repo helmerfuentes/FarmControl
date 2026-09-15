@@ -1,0 +1,210 @@
+<div class="page">
+	<div class="page-header">
+		<div>
+			<h1>Compras</h1>
+			<p>Registra los gastos de la finca (insumos, maquinaria u otros), asociados a una finca, parcela o proceso de cultivo específico, para calcular la utilidad real.</p>
+		</div>
+		<div class="page-actions">
+			<div class="total-chip">
+				Total: <span class="val-money">{{ total() | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
+			</div>
+			@if (isAdmin()) {
+				<button class="btn btn-primary" (click)="openNew()">
+					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+					Nueva compra
+				</button>
+			}
+		</div>
+	</div>
+
+	@if (deleteErrorMsg()) {
+		<p class="form-error">{{ deleteErrorMsg() }}</p>
+	}
+
+	@if (loading()) {
+		<fc-table-skeleton [rows]="6" [cols]="6" />
+	} @else if (items().length === 0) {
+		<fc-empty-state title="No hay compras registradas." message="Registra cada compra de insumos con su proveedor, cantidad y valor para llevar el control de gastos por finca.">
+			@if (isAdmin()) {
+				<button class="btn btn-primary" (click)="openNew()">Nueva compra</button>
+			}
+		</fc-empty-state>
+	} @else {
+		<app-table-controls
+			[total]="totalFiltered()"
+			[page]="page()"
+			[pageSize]="pageSize()"
+			(searchChange)="onSearch($event)"
+			(pageChange)="onPageChange($event)"
+			(pageSizeChange)="onPageSizeChange($event)" />
+		<div class="data-table-wrap cards-on-mobile">
+			<table class="data-table">
+				<thead>
+					<tr>
+						<th>Fecha</th>
+						<th>Descripción</th>
+						<th>Finca</th>
+						<th>Socio</th>
+						<th>Tipo</th>
+						<th>Valor</th>
+						<th>Saldo pendiente</th>
+						@if (isAdmin()) { <th></th> }
+					</tr>
+				</thead>
+				<tbody>
+					@for (item of pageItems(); track item.id) {
+						<tr (click)="openEdit(item)">
+							<td data-label="Fecha">{{ item.fecha | date:'dd/MM/yyyy' }}</td>
+							<td data-label="Descripción">{{ item.descripcion }}</td>
+							<td class="text-muted" data-label="Finca">{{ item.fincaNombre }}</td>
+							<td class="text-muted" data-label="Socio">{{ item.socioNombre }}</td>
+							<td data-label="Tipo"><span [class]="'badge badge-' + item.tipoCompra.toLowerCase()">{{ item.tipoCompra }}</span></td>
+							<td class="val-money" data-label="Valor">{{ item.valor | currency:'COP':'symbol-narrow':'1.0-0' }}</td>
+							<td data-label="Saldo pendiente">
+								@if ((item.saldoPendiente ?? 0) > 0) {
+									<span class="badge badge-saldo">{{ item.saldoPendiente | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
+								} @else {
+									<span class="badge badge-pagado">Pagado</span>
+								}
+							</td>
+							@if (isAdmin()) {
+								<td>
+									<div class="row-actions">
+										<button class="btn btn-icon btn-ghost" title="Eliminar"
+											(click)="$event.stopPropagation(); confirmDelete(item.id)">
+											<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+												<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>
+											</svg>
+										</button>
+									</div>
+								</td>
+							}
+						</tr>
+					}
+				</tbody>
+			</table>
+		</div>
+	}
+</div>
+
+<fc-drawer [title]="drawerTitle()" [open]="panelOpen()" (closed)="closePanel()">
+	<form [formGroup]="form" (ngSubmit)="save()">
+		<div class="form-group">
+			<label class="form-label">Finca *</label>
+			<select class="form-control" formControlName="fincaId"
+				(change)="onFincaChange($any($event.target).value)">
+				<option value="0" disabled>Seleccionar finca…</option>
+				@for (f of fincas(); track f.id) {
+					<option [value]="f.id">{{ f.nombre }}</option>
+				}
+			</select>
+		</div>
+		<div class="form-group">
+			<label class="form-label">Parcela (opcional)</label>
+			<select class="form-control" formControlName="parcelaId">
+				<option [ngValue]="null">— Sin parcela específica —</option>
+				@for (p of parcelas(); track p.id) {
+					<option [value]="p.id">{{ p.nombre }}</option>
+				}
+			</select>
+		</div>
+		<div class="form-group">
+			<label class="form-label">Socio *</label>
+			<select class="form-control" formControlName="socioId">
+				<option value="0" disabled>Seleccionar socio…</option>
+				@for (p of socios(); track p.id) {
+					<option [value]="p.id">{{ p.nombre }}</option>
+				}
+			</select>
+		</div>
+		<div class="form-group">
+			<label class="form-label">Tipo de compra *</label>
+			<select class="form-control" formControlName="tipoCompra">
+				@for (t of tiposCompra; track t.value) {
+					<option [value]="t.value">{{ t.label }}</option>
+				}
+			</select>
+		</div>
+		<div class="form-group">
+			<label class="form-label">Descripción *</label>
+			<textarea class="form-control" formControlName="descripcion" rows="2"
+				placeholder="¿Qué se compró?"></textarea>
+		</div>
+		<div class="form-group">
+			<label class="form-label">Valor (COP) *</label>
+			<input class="form-control" type="number" step="1000" formControlName="valor">
+		</div>
+		<div class="form-group">
+			<label class="form-label">Fecha *</label>
+			<input class="form-control" type="date" formControlName="fecha">
+		</div>
+		<div class="form-group">
+			<label class="form-label">Proveedor</label>
+			<input class="form-control" formControlName="proveedor" placeholder="Nombre del proveedor">
+		</div>
+		<div class="form-group">
+			<label class="form-label">URL adjunto (factura)</label>
+			<input class="form-control" formControlName="adjuntoUrl" placeholder="https://…">
+		</div>
+		<div class="form-actions">
+			<button type="button" class="btn btn-ghost" (click)="closePanel()">Cancelar</button>
+			<button type="submit" class="btn btn-primary" [disabled]="form.invalid || saving()">
+				{{ saving() ? 'Guardando…' : 'Guardar' }}
+			</button>
+		</div>
+	</form>
+
+	@if (editId() !== null) {
+		<div class="pagos-section">
+			<h3>Cuenta por pagar</h3>
+			<div class="pagos-resumen">
+				<span>Saldo pendiente: <strong>{{ saldoPendienteActual() | currency:'COP':'symbol-narrow':'1.0-0' }}</strong></span>
+			</div>
+
+			@if (loadingPagos()) {
+				<p class="text-muted">Cargando pagos…</p>
+			} @else if (pagos() && pagos()!.length > 0) {
+				<ul class="pagos-list">
+					@for (pago of pagos(); track pago.id) {
+						<li>
+							<span class="val-money">{{ pago.monto | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
+							<span class="text-muted">{{ pago.fecha | date:'dd/MM/yyyy' }}</span>
+							@if (pago.observacion) { <span class="text-muted">— {{ pago.observacion }}</span> }
+						</li>
+					}
+				</ul>
+			} @else {
+				<p class="text-muted">Aún no se han registrado pagos.</p>
+			}
+
+			@if (saldoPendienteActual() > 0) {
+				<form class="pago-form" [formGroup]="pagoForm" (ngSubmit)="registrarPago()">
+					@if (pagoErrorMsg()) { <p class="form-error">{{ pagoErrorMsg() }}</p> }
+					<div class="form-group">
+						<label class="form-label">Monto</label>
+						<input class="form-control" type="number" step="1000" formControlName="monto">
+					</div>
+					<div class="form-group">
+						<label class="form-label">Fecha</label>
+						<input class="form-control" type="date" formControlName="fecha">
+					</div>
+					<div class="form-group">
+						<label class="form-label">Observación</label>
+						<input class="form-control" formControlName="observacion" placeholder="Opcional">
+					</div>
+					<button type="submit" class="btn btn-secondary" [disabled]="pagoForm.invalid || savingPago()">
+						{{ savingPago() ? 'Registrando…' : 'Registrar pago' }}
+					</button>
+				</form>
+			}
+		</div>
+
+		<fc-comentarios-panel tipoEntidad="Compra" [entidadId]="editId()!" />
+	}
+</fc-drawer>
+
+<fc-confirm-dialog
+	[open]="deleteId() !== null"
+	message="¿Eliminar este registro de compra?"
+	(confirmed)="doDelete()"
+	(cancelled)="cancelDelete()"/>

@@ -1,0 +1,217 @@
+.page-subtitle {
+	color: var(--text-muted);
+	font-size: 0.875rem;
+	margin-top: 0.25rem;
+}
+
+.filtros {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 1rem;
+	margin-bottom: 1.5rem;
+
+	.filtro-select {
+		max-width: 260px;
+	}
+}
+
+.badge-activo {
+	background: rgba(130, 201, 145, 0.18);
+	color: #2d7a3e;
+	border: 1px solid rgba(130, 201, 145, 0.4);
+}
+
+.badge-cosechado {
+	background: rgba(201, 148, 58, 0.18);
+	color: #8a5a0a;
+	border: 1px solid rgba(201, 148, 58, 0.4);
+}
+
+.badge-cerrado {
+	background: rgba(150, 150, 150, 0.15);
+	color: var(--text-muted);
+	border: 1px solid var(--border);
+}
+
+.aviso-activo {
+	background: rgba(201, 148, 58, 0.12);
+	border: 1px solid rgba(201, 148, 58, 0.35);
+	border-radius: 6px;
+	padding: 0.75rem 1rem;
+	font-size: 0.85rem;
+	color: #7a4a00;
+	margin-bottom: 1.25rem;
+	line-height: 1.5;
+}
+
+.col-money {
+	text-align: right;
+}
+
+// ── Resumen del ciclo ──────────────────────────────────────────────────────
+.resumen-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 1rem;
+	margin-bottom: .25rem;
+
+	h3 {
+		font-family: var(--font-display);
+		font-size: var(--text-lg);
+		margin: 0;
+	}
+}
+
+.resumen-fechas {
+	font-size: var(--text-xs);
+	margin-bottom: 1.5rem;
+}
+
+.resumen-kpis {
+	display: flex;
+	flex-direction: column;
+	gap: .875rem;
+	margin-bottom: 1.5rem;
+}
+
+.resumen-kpi {
+	border: 1px solid var(--border);
+	border-radius: var(--radius-md);
+	padding: .875rem 1rem;
+
+	&.kpi-negativo { border-color: var(--error); }
+}
+
+.resumen-kpi-label {
+	display: block;
+	font-size: var(--text-xs);
+	color: var(--text-muted);
+	text-transform: uppercase;
+	letter-spacing: .04em;
+	margin-bottom: .25rem;
+}
+
+.resumen-kpi-val {
+	display: block;
+	font-family: var(--font-display);
+	font-size: var(--text-xl);
+	font-weight: 600;
+}
+
+.resumen-kpi-sub {
+	display: block;
+	font-size: var(--text-xs);
+	color: var(--text-dim);
+	margin-top: .25rem;
+}
+
+.kpi-pos { color: var(--accent); }
+.kpi-neg { color: var(--error); }
+
+.resumen-nota {
+	line-height: 1.6;
+}
+
+// ── Toggle tabla / línea de tiempo ─────────────────────────────────────────
+.vista-toggle {
+	display: flex;
+	gap: .25rem;
+	margin-left: auto;
+}
+
+.tab-btn {
+	padding: .5rem 1rem;
+	background: none;
+	border: 1px solid var(--border);
+	border-radius: var(--radius-sm);
+	color: var(--text-muted);
+	font-size: var(--text-sm);
+	font-weight: 500;
+	cursor: pointer;
+	transition: color var(--transition-fast), background var(--transition-fast);
+
+	&:hover { color: var(--text); background: var(--surface-hover); }
+
+	&.active {
+		color: #fff;
+		background: var(--accent);
+		border-color: var(--accent);
+	}
+}
+
+.checkbox-row {
+	align-items: center;
+	display: flex;
+	gap: .5rem;
+	font-size: var(--text-sm);
+
+	input { height: 1rem; width: 1rem; }
+}
+
+// ── Línea de tiempo ──────────────────────────────────────────────────────
+.linea-tiempo {
+	display: flex;
+	flex-direction: column;
+	gap: 0;
+	margin-left: .5rem;
+}
+
+.linea-tiempo-item {
+	display: flex;
+	gap: 1rem;
+	position: relative;
+
+	&:not(:last-child) .linea-tiempo-marker::after {
+		content: '';
+		position: absolute;
+		top: 18px;
+		left: 5px;
+		bottom: -1rem;
+		width: 2px;
+		background: var(--border);
+	}
+}
+
+.linea-tiempo-marker {
+	flex-shrink: 0;
+	width: 12px;
+	height: 12px;
+	border-radius: 50%;
+	margin-top: 6px;
+	position: relative;
+	background: var(--border);
+
+	&.badge-activo { background: #2d7a3e; }
+	&.badge-cosechado { background: #8a5a0a; }
+	&.badge-cerrado { background: var(--text-dim); }
+}
+
+.linea-tiempo-card {
+	border: 1px solid var(--border);
+	border-radius: var(--radius-md);
+	padding: 1rem 1.25rem;
+	margin-bottom: 1rem;
+	flex: 1;
+}
+
+.linea-tiempo-card-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: .75rem;
+	margin-bottom: .375rem;
+}
+
+.linea-tiempo-fechas {
+	font-size: var(--text-xs);
+	margin-bottom: .5rem;
+}
+
+.linea-tiempo-actions {
+	display: flex;
+	align-items: center;
+	gap: 1rem;
+	margin-top: .75rem;
+}

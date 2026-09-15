@@ -1,0 +1,45 @@
+.skel-kpi-grid {
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
+	gap: 1rem;
+	margin-bottom: 1.5rem;
+
+	@media (max-width: 768px) {
+		grid-template-columns: repeat(2, 1fr);
+	}
+}
+
+.skel-kpi {
+	display: flex;
+	flex-direction: column;
+	gap: .625rem;
+	padding: 1.25rem;
+	border: 1px solid var(--border);
+	border-radius: var(--radius-md);
+	background: var(--surface-raised);
+}
+
+.skel-kpi-label { width: 60%; height: .625rem; }
+.skel-kpi-value { width: 85%; height: 1.25rem; }
+
+.skel-charts-row {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 1rem;
+	margin-bottom: 1.5rem;
+
+	@media (max-width: 768px) {
+		grid-template-columns: 1fr;
+	}
+}
+
+.skel-chart {
+	height: 220px;
+	border-radius: var(--radius-md);
+}
+
+.skel-table-block {
+	border: 1px solid var(--border);
+	border-radius: var(--radius-md);
+	overflow: hidden;
+}

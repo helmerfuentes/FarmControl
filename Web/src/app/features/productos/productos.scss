@@ -1,0 +1,39 @@
+.page {
+	padding: 2rem 2.5rem;
+
+	@media (max-width: 640px) {
+		padding: 1.25rem 1rem;
+	}
+}
+
+.tags {
+	display: flex;
+	flex-wrap: wrap;
+	gap: .375rem;
+}
+
+.tag {
+	padding: .2rem .6rem;
+	background: var(--accent-dim);
+	color: var(--accent);
+	border-radius: 99px;
+	font-size: var(--text-xs);
+	font-weight: 500;
+}
+
+.clasif-row {
+	display: grid;
+	grid-template-columns: 1fr 1fr 90px auto;
+	gap: .5rem;
+	align-items: center;
+	margin-bottom: .5rem;
+}
+
+.mt-2 {
+	margin-top: .5rem;
+}
+
+.btn-sm {
+	padding: .35rem .75rem;
+	font-size: var(--text-sm);
+}

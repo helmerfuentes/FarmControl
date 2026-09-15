@@ -1,0 +1,163 @@
+<div class="page">
+	<div class="page-header">
+		<div>
+			<h1>Personas</h1>
+			<p>Socios, jornaleros y compradores de tu finca — se reutilizan como responsables de actividades, jornaleros pagados en mano de obra, compradores de ventas y socios de procesos de cultivo.</p>
+		</div>
+		@if (isAdmin()) {
+			<div class="page-actions">
+				<button class="btn btn-primary" (click)="openNew()">
+					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+						<path d="M12 5v14M5 12h14"/>
+					</svg>
+					Nueva persona
+				</button>
+			</div>
+		}
+	</div>
+
+	@if (deleteErrorMsg()) {
+		<p class="form-error">{{ deleteErrorMsg() }}</p>
+	}
+
+	<div class="filtros">
+		<button class="filtro-btn" [class.active]="filtroTipo() === ''" (click)="setFiltro('')">Todos</button>
+		@for (t of tiposPersona; track t.value) {
+			<button class="filtro-btn" [class.active]="filtroTipo() === t.value" (click)="setFiltro(t.value)">
+				{{ t.label }}
+			</button>
+		}
+	</div>
+
+	@if (loading()) {
+		<fc-table-skeleton [rows]="6" [cols]="5" />
+	} @else if (items().length === 0) {
+		<fc-empty-state title="No hay personas registradas." message="Registra a las personas que trabajan en tus fincas: socios, jornaleros, compradores y demás.">
+			@if (isAdmin()) {
+				<button class="btn btn-primary" (click)="openNew()">Nueva persona</button>
+			}
+		</fc-empty-state>
+	} @else {
+		<app-table-controls
+			[total]="totalFiltered()"
+			[page]="page()"
+			[pageSize]="pageSize()"
+			(searchChange)="onSearch($event)"
+			(pageChange)="onPageChange($event)"
+			(pageSizeChange)="onPageSizeChange($event)" />
+		<div class="data-table-wrap cards-on-mobile">
+			<table class="data-table">
+				<thead>
+					<tr>
+						<th>Nombre</th>
+						<th>Tipo</th>
+						<th>Documento</th>
+						<th>Teléfono</th>
+						<th>Email</th>
+						@if (isAdmin()) { <th></th> }
+					</tr>
+				</thead>
+				<tbody>
+					@for (item of pageItems(); track item.id) {
+						<tr (click)="openEdit(item)">
+							<td data-label="Nombre"><strong>{{ item.nombre }}</strong></td>
+							<td data-label="Tipo"><span [class]="tipoBadgeClass(item.tipoPersona)">{{ item.tipoPersona }}</span></td>
+							<td class="text-muted" data-label="Documento">{{ item.documento || '—' }}</td>
+							<td class="text-muted" data-label="Teléfono">{{ item.telefono || '—' }}</td>
+							<td class="text-muted" data-label="Email">{{ item.email || '—' }}</td>
+							@if (isAdmin()) {
+								<td>
+									@if (item.tipoPersona !== 'Admin') {
+										<div class="row-actions">
+											<button class="btn btn-icon btn-ghost" title="Eliminar"
+												(click)="$event.stopPropagation(); confirmDelete(item.id)">
+												<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+													<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>
+												</svg>
+											</button>
+										</div>
+									}
+								</td>
+							}
+						</tr>
+					}
+				</tbody>
+			</table>
+		</div>
+	}
+</div>
+
+<fc-drawer [title]="drawerTitle()" [open]="panelOpen()" (closed)="closePanel()">
+	<form [formGroup]="form" (ngSubmit)="save()">
+		<div class="form-group">
+			<label class="form-label">Tipo de persona *</label>
+			<select class="form-control" formControlName="tipoPersona">
+				@for (t of tiposPersona; track t.value) {
+					<option [value]="t.value">{{ t.label }}</option>
+				}
+			</select>
+		</div>
+
+		<div class="form-group">
+			<label class="form-label">Nombre completo *</label>
+			<input class="form-control" formControlName="nombre" placeholder="Ej: Juan Pérez">
+			@if (form.get('nombre')?.invalid && form.get('nombre')?.touched) {
+				<span class="form-error">El nombre es requerido</span>
+			}
+		</div>
+
+		<div class="form-group">
+			<label class="form-label">Documento</label>
+			<input class="form-control" formControlName="documento" placeholder="Cédula o NIT">
+		</div>
+
+		<div class="form-group">
+			<label class="form-label">Teléfono</label>
+			<input class="form-control" formControlName="telefono" placeholder="+57 300 000 0000">
+		</div>
+
+		<div class="form-group">
+			<label class="form-label">Email</label>
+			<input class="form-control" type="email" formControlName="email" placeholder="correo@ejemplo.com">
+			@if (form.get('email')?.invalid && form.get('email')?.touched) {
+				<span class="form-error">Email inválido</span>
+			}
+		</div>
+
+		<div class="form-group">
+			<label class="form-label">Valor por día (COP)</label>
+			<input class="form-control" type="number" step="1000" min="0" formControlName="valorDia"
+				placeholder="Ej: 80000">
+			<span class="form-hint">Tarifa base usada para calcular el costo de actividades</span>
+		</div>
+
+		@if (tieneAcceso()) {
+			<div class="form-divider">
+				<span>Acceso al sistema</span>
+			</div>
+
+			<div class="form-group">
+				<label class="form-label">Usuario</label>
+				<input class="form-control" formControlName="nombreUsuario" placeholder="Nombre de usuario para ingresar">
+			</div>
+
+			<div class="form-group">
+				<label class="form-label">{{ editId() ? 'Nueva contraseña (dejar vacío para no cambiar)' : 'Contraseña' }}</label>
+				<input class="form-control" type="password" formControlName="password" placeholder="Contraseña de acceso">
+			</div>
+		}
+
+		<div class="form-actions">
+			<button type="button" class="btn btn-ghost" (click)="closePanel()">Cancelar</button>
+			<button type="submit" class="btn btn-primary" [disabled]="form.invalid || saving()">
+				{{ saving() ? 'Guardando…' : 'Guardar' }}
+			</button>
+		</div>
+	</form>
+</fc-drawer>
+
+<fc-confirm-dialog
+	[open]="deleteId() !== null"
+	message="¿Eliminar esta persona? Se perderán sus registros de mano de obra y referencias en compras/ventas."
+	(confirmed)="doDelete()"
+	(cancelled)="cancelDelete()"/>

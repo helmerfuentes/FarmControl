@@ -1,0 +1,32 @@
+<div class="comentarios-panel">
+	<h3 class="comentarios-titulo">Notas y comentarios</h3>
+
+	@if (loading()) {
+		<p class="comentarios-loading">Cargando…</p>
+	} @else if (comentarios().length === 0) {
+		<p class="comentarios-vacio">Sin comentarios todavía.</p>
+	} @else {
+		<ul class="comentarios-list">
+			@for (c of comentarios(); track c.id) {
+				<li class="comentario-item">
+					<div class="comentario-header">
+						<strong>{{ c.autorNombre }}</strong>
+						<span class="comentario-fecha">{{ c.fecha | date:'dd/MM/yyyy HH:mm' }}</span>
+					</div>
+					<p class="comentario-texto">{{ c.texto }}</p>
+					@if (esAutor(c)) {
+						<button type="button" class="comentario-eliminar" (click)="eliminar(c.id)">Eliminar</button>
+					}
+				</li>
+			}
+		</ul>
+	}
+
+	<div class="comentario-form">
+		<textarea class="form-control" rows="2" placeholder="Escribe una nota…"
+			[ngModel]="nuevoTexto()" (ngModelChange)="nuevoTexto.set($event)"></textarea>
+		<button type="button" class="btn btn-primary btn-sm" [disabled]="!nuevoTexto().trim() || enviando()" (click)="enviar()">
+			{{ enviando() ? 'Enviando…' : 'Comentar' }}
+		</button>
+	</div>
+</div>

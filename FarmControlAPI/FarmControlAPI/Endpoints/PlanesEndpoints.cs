@@ -8,6 +8,12 @@ internal static class PlanesEndpoints
 {
 	internal static void MapPlanesEndpoints(this WebApplication app)
 	{
+		app.MapGet("/planes/publicos", async (IMediator mediator) =>
+		{
+			var result = await mediator.Send(new GetPlanesQuery());
+			return EndpointHelpers.ToResponse(result);
+		}).AllowAnonymous();
+
 		var planes = app.MapGroup("/planes").RequireAuthorization("SuperAdmin");
 
 		planes.MapGet("/", async (IMediator mediator) =>

@@ -1,0 +1,50 @@
+<div class="page">
+	<div class="page-header">
+		<div>
+			<h1>Backups</h1>
+			<p>Copias de seguridad de la base de datos. Se genera una automáticamente cada 24 horas; también puedes generar una manualmente y descargarla.</p>
+		</div>
+		<div class="page-actions">
+			<button class="btn btn-primary" (click)="generar()" [disabled]="generando()">
+				{{ generando() ? 'Generando…' : 'Generar backup ahora' }}
+			</button>
+		</div>
+	</div>
+
+	@if (errorMsg()) {
+		<p class="form-error">{{ errorMsg() }}</p>
+	}
+
+	@if (loading()) {
+		<fc-table-skeleton [rows]="6" [cols]="3" />
+	} @else if (backups().length === 0) {
+		<fc-empty-state title="Todavía no hay backups." message="Genera el primer backup manualmente o espera al proceso automático diario."></fc-empty-state>
+	} @else {
+		<div class="data-table-wrap cards-on-mobile">
+			<table class="data-table">
+				<thead>
+					<tr>
+						<th>Archivo</th>
+						<th>Fecha</th>
+						<th>Tamaño</th>
+						<th></th>
+					</tr>
+				</thead>
+				<tbody>
+					@for (b of backups(); track b.nombreArchivo) {
+						<tr>
+							<td data-label="Archivo">{{ b.nombreArchivo }}</td>
+							<td data-label="Fecha">{{ b.fecha | date:'dd/MM/yyyy HH:mm' }}</td>
+							<td data-label="Tamaño">{{ formatearTamano(b.tamanoBytes) }}</td>
+							<td data-label="">
+								<button class="btn btn-ghost btn-sm" (click)="descargar(b)" [disabled]="descargando() === b.nombreArchivo">
+									{{ descargando() === b.nombreArchivo ? 'Descargando…' : 'Descargar' }}
+								</button>
+							</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		</div>
+	}
+</div>

@@ -1,0 +1,96 @@
+.page {
+	padding: 2rem 2.5rem;
+
+	@media (max-width: 640px) {
+		padding: 1.25rem 1rem;
+	}
+}
+
+.form-row {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: .75rem;
+}
+
+.date-hora-row {
+	display: grid;
+	grid-template-columns: 1fr 90px;
+	gap: .5rem;
+}
+
+.hora-select {
+	text-align: center;
+}
+
+.modo-toggle {
+	display: flex;
+	gap: .5rem;
+	margin-bottom: 1.25rem;
+}
+
+.modo-btn {
+	flex: 1;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: .4rem;
+	padding: .6rem 1rem;
+	border: 1.5px solid var(--border);
+	border-radius: 8px;
+	background: transparent;
+	color: var(--text-muted);
+	font-size: var(--text-sm);
+	font-weight: 500;
+	cursor: pointer;
+	transition: all .15s;
+
+	svg {
+		width: 16px;
+		height: 16px;
+		flex-shrink: 0;
+	}
+
+	&.active {
+		border-color: var(--accent);
+		background: var(--accent-dim);
+		color: var(--accent);
+	}
+
+	&:not(.active):hover {
+		background: var(--surface-hover);
+	}
+}
+
+.tarifa-info {
+	background: var(--accent-dim);
+	border: 1px solid var(--border);
+	border-radius: 8px;
+	padding: .75rem 1rem;
+	margin-bottom: 1rem;
+}
+
+.tarifa-info-row {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	font-size: var(--text-sm);
+
+	& + & {
+		margin-top: .35rem;
+		padding-top: .35rem;
+		border-top: 1px solid var(--border-subtle);
+	}
+}
+
+.tarifa-label {
+	color: var(--text-muted);
+}
+
+.tarifa-val {
+	font-weight: 600;
+	color: var(--accent);
+}
+
+.tarifa-hora .tarifa-val {
+	color: var(--text);
+}

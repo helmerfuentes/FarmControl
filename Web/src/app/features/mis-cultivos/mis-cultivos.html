@@ -1,0 +1,46 @@
+<div class="page">
+	<div class="page-header">
+		<div>
+			<h1>Mis Cultivos</h1>
+			<p>Procesos de cultivo donde participas como socio: producto sembrado, fechas, costo inicial y estado (activo, cosechado o cerrado).</p>
+		</div>
+	</div>
+
+	@if (loading()) {
+		<fc-table-skeleton [rows]="5" [cols]="6" />
+	} @else if (procesos().length === 0) {
+		<div class="mis-cultivos-empty">
+			<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48">
+				<path d="M24 4a20 20 0 100 40A20 20 0 0024 4zm0 0v20l8 4"/>
+			</svg>
+			<p>No tienes procesos de cultivo registrados.</p>
+		</div>
+	} @else {
+		<div class="data-table-wrap cards-on-mobile">
+			<table class="data-table">
+				<thead>
+					<tr>
+						<th>Parcela</th>
+						<th>Producto</th>
+						<th>Estado</th>
+						<th>Fecha inicio</th>
+						<th>Est. cosecha</th>
+						<th>Cierre</th>
+					</tr>
+				</thead>
+				<tbody>
+					@for (p of procesos(); track p.id) {
+						<tr>
+							<td data-label="Parcela"><strong>{{ p.parcelaNombre }}</strong></td>
+							<td data-label="Producto">{{ p.productoNombre }}</td>
+							<td data-label="Estado"><span [class]="estadoBadgeClass(p.estado)">{{ p.estado }}</span></td>
+							<td class="text-muted" data-label="Fecha inicio">{{ p.fechaInicio | date:'dd/MM/yyyy' }}</td>
+							<td class="text-muted" data-label="Est. cosecha">{{ p.fechaEstimadaCosecha ? (p.fechaEstimadaCosecha | date:'dd/MM/yyyy') : '—' }}</td>
+							<td class="text-muted" data-label="Cierre">{{ p.fechaCierre ? (p.fechaCierre | date:'dd/MM/yyyy') : '—' }}</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		</div>
+	}
+</div>

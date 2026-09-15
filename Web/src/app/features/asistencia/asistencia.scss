@@ -1,0 +1,35 @@
+.page-actions {
+	display: flex;
+	gap: .75rem;
+	align-items: center;
+}
+
+.form {
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+
+	label {
+		display: flex;
+		flex-direction: column;
+		gap: .35rem;
+		font-size: var(--text-sm);
+		color: var(--text-muted);
+	}
+
+	select, input, textarea {
+		padding: .5rem .75rem;
+		border-radius: var(--radius-sm);
+		border: 1px solid var(--border);
+		background: var(--surface);
+		color: var(--text);
+		font-size: var(--text-sm);
+	}
+}
+
+.form-actions {
+	display: flex;
+	justify-content: flex-end;
+	gap: .75rem;
+	margin-top: .5rem;
+}

@@ -1,0 +1,26 @@
+.page {
+	padding: 2rem 2.5rem;
+
+	@media (max-width: 640px) {
+		padding: 1.25rem 1rem;
+	}
+}
+
+.cuenta-card {
+	background: var(--surface-raised);
+	border: 1px solid var(--border);
+	border-radius: var(--radius-md);
+	max-width: 32rem;
+	padding: var(--space-4);
+
+	h2 {
+		font-size: var(--text-base);
+		margin: 0 0 var(--space-3);
+	}
+}
+
+.form-success {
+	color: var(--color-success, #16a34a);
+	font-size: var(--text-sm);
+	margin: 0 0 var(--space-2);
+}

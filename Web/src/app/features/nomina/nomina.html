@@ -1,0 +1,105 @@
+<div class="page">
+	<div class="page-header">
+		<div>
+			<h1>Nómina</h1>
+			<p>Liquida los registros de mano de obra pendientes por jornalero y periodo.</p>
+		</div>
+	</div>
+
+	<form [formGroup]="filtroForm" class="filtro-form">
+		<label>Jornalero
+			<select formControlName="jornaleroId">
+				<option [ngValue]="0">Selecciona...</option>
+				@for (j of jornaleros(); track j.id) {
+					<option [ngValue]="j.id">{{ j.nombre }}</option>
+				}
+			</select>
+		</label>
+		<label>Desde
+			<input type="date" formControlName="fechaInicio" />
+		</label>
+		<label>Hasta
+			<input type="date" formControlName="fechaFin" />
+		</label>
+		<div class="filtro-actions">
+			<button type="button" class="btn btn-ghost" [disabled]="filtroForm.invalid || loadingPendientes()" (click)="verPendientes()">Ver pendientes</button>
+		</div>
+	</form>
+
+	@if (errorMsg()) {
+		<p class="error-msg">{{ errorMsg() }}</p>
+	}
+
+	@if (loadingPendientes()) {
+		<fc-table-skeleton [rows]="4" [cols]="4" />
+	} @else if (pendientes()) {
+		<div class="preview-card">
+			@if (pendientes()!.registros.length === 0) {
+				<p class="text-muted">No hay registros pendientes de liquidar en este rango.</p>
+			} @else {
+				<div class="data-table-wrap cards-on-mobile">
+					<table class="data-table">
+						<thead>
+							<tr>
+								<th>Fecha actividad</th>
+								<th>Horas</th>
+								<th>Valor hora</th>
+								<th>Subtotal</th>
+							</tr>
+						</thead>
+						<tbody>
+							@for (r of pendientes()!.registros; track r.registroId) {
+								<tr>
+									<td data-label="Fecha">{{ r.fechaActividad | date:'dd/MM/yyyy' }}</td>
+									<td data-label="Horas">{{ r.numHoras | number:'1.0-1' }}</td>
+									<td data-label="Valor hora">{{ r.valorHora | currency:'COP':'symbol-narrow':'1.0-0' }}</td>
+									<td data-label="Subtotal">{{ r.subtotal | currency:'COP':'symbol-narrow':'1.0-0' }}</td>
+								</tr>
+							}
+						</tbody>
+					</table>
+				</div>
+				<div class="preview-total">
+					<span>Total horas: <strong>{{ pendientes()!.totalHoras | number:'1.0-1' }}</strong></span>
+					<span>Total a pagar: <strong>{{ pendientes()!.totalPagar | currency:'COP':'symbol-narrow':'1.0-0' }}</strong></span>
+				</div>
+				<label class="obs-label">Observación
+					<input type="text" [formControl]="$any(filtroForm.get('observacion'))" placeholder="Opcional" />
+				</label>
+				<button class="btn btn-primary" [disabled]="liquidando()" (click)="liquidar()">Liquidar nómina</button>
+			}
+		</div>
+	}
+
+	<h2 class="section-title">Liquidaciones realizadas</h2>
+	@if (loadingLiquidaciones()) {
+		<fc-table-skeleton [rows]="4" [cols]="5" />
+	} @else if (liquidaciones().length === 0) {
+		<fc-empty-state title="Todavía no hay liquidaciones." message="Selecciona un jornalero y un rango de fechas para liquidar su nómina."></fc-empty-state>
+	} @else {
+		<div class="data-table-wrap cards-on-mobile">
+			<table class="data-table">
+				<thead>
+					<tr>
+						<th>Jornalero</th>
+						<th>Periodo</th>
+						<th>Horas</th>
+						<th>Total pagado</th>
+						<th>Fecha liquidación</th>
+					</tr>
+				</thead>
+				<tbody>
+					@for (l of liquidaciones(); track l.id) {
+						<tr>
+							<td data-label="Jornalero">{{ l.jornaleroNombre }}</td>
+							<td class="text-muted" data-label="Periodo">{{ l.fechaInicio | date:'dd/MM/yyyy' }} - {{ l.fechaFin | date:'dd/MM/yyyy' }}</td>
+							<td data-label="Horas">{{ l.totalHoras | number:'1.0-1' }}</td>
+							<td data-label="Total pagado">{{ l.totalPagar | currency:'COP':'symbol-narrow':'1.0-0' }}</td>
+							<td class="text-muted" data-label="Fecha">{{ l.fechaLiquidacion | date:'dd/MM/yyyy' }}</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		</div>
+	}
+</div>
