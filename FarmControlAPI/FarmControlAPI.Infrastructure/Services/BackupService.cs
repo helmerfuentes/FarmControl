@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using FarmControlAPI.Application.Common;
+using FarmControlAPI.Infrastructure.Extensions;
 using Microsoft.Extensions.Configuration;
 using Npgsql;
 
@@ -17,8 +18,9 @@ public class BackupService : IBackupService
 
 	public BackupService(IConfiguration configuration)
 	{
-		_connectionString = configuration.GetConnectionString("DefaultConnection")
-			?? "Host=localhost;Port=5432;Database=farmcontrol;Username=farmcontrol;Password=farmcontrol";
+		_connectionString = PostgresConnectionStringHelper.Normalize(
+			configuration.GetConnectionString("DefaultConnection")
+				?? "Host=localhost;Port=5432;Database=farmcontrol;Username=farmcontrol;Password=farmcontrol");
 		_carpetaBackups = Path.Combine(Directory.GetCurrentDirectory(), _CARPETA_BACKUPS);
 	}
 

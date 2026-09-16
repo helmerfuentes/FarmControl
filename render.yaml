@@ -32,6 +32,9 @@ services:
     rootDir: Web
     buildCommand: npm ci && npm run build -- --configuration production
     staticPublishPath: ./dist/Web/browser
+    envVars:
+      - key: NODE_VERSION
+        value: 22.22.3
     routes:
       - type: rewrite
         source: /*

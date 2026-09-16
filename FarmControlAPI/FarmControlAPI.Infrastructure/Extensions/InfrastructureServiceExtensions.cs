@@ -12,8 +12,9 @@ public static class InfrastructureServiceExtensions
 {
 	public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
 	{
-		var connectionString = configuration.GetConnectionString("DefaultConnection")
-			?? "Host=localhost;Port=5432;Database=farmcontrol;Username=farmcontrol;Password=farmcontrol";
+		var connectionString = PostgresConnectionStringHelper.Normalize(
+			configuration.GetConnectionString("DefaultConnection")
+				?? "Host=localhost;Port=5432;Database=farmcontrol;Username=farmcontrol;Password=farmcontrol");
 
 		services.AddDbContext<FarmControlDbContext>(options =>
 			options.UseNpgsql(connectionString));
