@@ -1,6 +1,7 @@
 using FarmControlAPI.Application.Common;
 using FarmControlAPI.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace FarmControlAPI.Infrastructure.Persistence;
 
@@ -41,16 +42,43 @@ public class FarmControlDbContext : DbContext, IFarmControlDbContext
 	public DbSet<Plan> Planes => Set<Plan>();
 	public DbSet<Comentario> Comentarios => Set<Comentario>();
 
+	private static readonly ValueConverter<DateTime, DateTime> _UTC_DATETIME_CONVERTER = new(
+		v => v.Kind == DateTimeKind.Utc ? v : DateTime.SpecifyKind(v, DateTimeKind.Utc),
+		v => DateTime.SpecifyKind(v, DateTimeKind.Utc));
+
+	private static readonly ValueConverter<DateTime?, DateTime?> _UTC_NULLABLE_DATETIME_CONVERTER = new(
+		v => v.HasValue ? (v.Value.Kind == DateTimeKind.Utc ? v.Value : DateTime.SpecifyKind(v.Value, DateTimeKind.Utc)) : v,
+		v => v.HasValue ? DateTime.SpecifyKind(v.Value, DateTimeKind.Utc) : v);
+
 	protected override void OnModelCreating(ModelBuilder modelBuilder)
 	{
 		base.OnModelCreating(modelBuilder);
 		modelBuilder.ApplyConfigurationsFromAssembly(typeof(FarmControlDbContext).Assembly);
 		AplicarFiltrosDeTenant(modelBuilder);
+		AplicarConversorUtcADateTimes(modelBuilder);
 
 		modelBuilder.Entity<Comentario>()
 			.HasOne(c => c.Autor)
 			.WithMany()
 			.HasForeignKey(c => c.AutorPersonaId);
+	}
+
+	private static void AplicarConversorUtcADateTimes(ModelBuilder modelBuilder)
+	{
+		foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+		{
+			foreach (var property in entityType.GetProperties())
+			{
+				if (property.ClrType == typeof(DateTime))
+				{
+					property.SetValueConverter(_UTC_DATETIME_CONVERTER);
+				}
+				else if (property.ClrType == typeof(DateTime?))
+				{
+					property.SetValueConverter(_UTC_NULLABLE_DATETIME_CONVERTER);
+				}
+			}
+		}
 	}
 
 	private void AplicarFiltrosDeTenant(ModelBuilder modelBuilder)
