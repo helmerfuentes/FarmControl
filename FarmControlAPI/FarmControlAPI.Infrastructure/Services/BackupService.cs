@@ -1,6 +1,7 @@
+using System.Diagnostics;
 using FarmControlAPI.Application.Common;
-using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Configuration;
+using Npgsql;
 
 namespace FarmControlAPI.Infrastructure.Services;
 
@@ -9,13 +10,15 @@ public class BackupService : IBackupService
 	private const int _MAX_BACKUPS_A_CONSERVAR = 30;
 	private const string _CARPETA_BACKUPS = "Backups";
 	private const string _PREFIJO_ARCHIVO = "farmcontrol-backup-";
+	private const string _EXTENSION_ARCHIVO = ".sql";
 
 	private readonly string _connectionString;
 	private readonly string _carpetaBackups;
 
 	public BackupService(IConfiguration configuration)
 	{
-		_connectionString = configuration.GetConnectionString("DefaultConnection") ?? "Data Source=farmcontrol.db";
+		_connectionString = configuration.GetConnectionString("DefaultConnection")
+			?? "Host=localhost;Port=5432;Database=farmcontrol;Username=farmcontrol;Password=farmcontrol";
 		_carpetaBackups = Path.Combine(Directory.GetCurrentDirectory(), _CARPETA_BACKUPS);
 	}
 
@@ -23,16 +26,39 @@ public class BackupService : IBackupService
 	{
 		Directory.CreateDirectory(_carpetaBackups);
 
-		var nombreArchivo = $"{_PREFIJO_ARCHIVO}{DateTime.UtcNow:yyyyMMdd-HHmmss}.db";
+		var nombreArchivo = $"{_PREFIJO_ARCHIVO}{DateTime.UtcNow:yyyyMMdd-HHmmss}{_EXTENSION_ARCHIVO}";
 		var rutaDestino = Path.Combine(_carpetaBackups, nombreArchivo);
+		var builder = new NpgsqlConnectionStringBuilder(_connectionString);
 
-		await using (var conexion = new SqliteConnection(_connectionString))
+		var proceso = new Process
 		{
-			await conexion.OpenAsync(cancellationToken);
-			await using var comando = conexion.CreateCommand();
-			comando.CommandText = "VACUUM INTO $ruta";
-			comando.Parameters.AddWithValue("$ruta", rutaDestino);
-			await comando.ExecuteNonQueryAsync(cancellationToken);
+			StartInfo = new ProcessStartInfo
+			{
+				FileName = "pg_dump",
+				RedirectStandardOutput = true,
+				RedirectStandardError = true,
+				UseShellExecute = false,
+			}
+		};
+		proceso.StartInfo.ArgumentList.Add($"--host={builder.Host}");
+		proceso.StartInfo.ArgumentList.Add($"--port={builder.Port}");
+		proceso.StartInfo.ArgumentList.Add($"--username={builder.Username}");
+		proceso.StartInfo.ArgumentList.Add($"--dbname={builder.Database}");
+		proceso.StartInfo.ArgumentList.Add("--no-password");
+		proceso.StartInfo.EnvironmentVariables["PGPASSWORD"] = builder.Password;
+
+		proceso.Start();
+		await using (var archivoDestino = File.Create(rutaDestino))
+		{
+			await proceso.StandardOutput.BaseStream.CopyToAsync(archivoDestino, cancellationToken);
+		}
+		await proceso.WaitForExitAsync(cancellationToken);
+
+		if (proceso.ExitCode != 0)
+		{
+			var error = await proceso.StandardError.ReadToEndAsync(cancellationToken);
+			File.Delete(rutaDestino);
+			throw new InvalidOperationException($"pg_dump finalizó con código {proceso.ExitCode}: {error}");
 		}
 
 		PurgarBackupsAntiguos();
@@ -48,7 +74,7 @@ public class BackupService : IBackupService
 			return [];
 		}
 
-		return Directory.GetFiles(_carpetaBackups, $"{_PREFIJO_ARCHIVO}*.db")
+		return Directory.GetFiles(_carpetaBackups, $"{_PREFIJO_ARCHIVO}*{_EXTENSION_ARCHIVO}")
 			.Select(ruta => new FileInfo(ruta))
 			.OrderByDescending(f => f.LastWriteTimeUtc)
 			.Select(f => new BackupInfo(f.Name, f.LastWriteTimeUtc, f.Length))
@@ -75,14 +101,17 @@ public class BackupService : IBackupService
 
 	public long ObtenerTamanoBaseDatosBytes()
 	{
-		var dataSource = new SqliteConnectionStringBuilder(_connectionString).DataSource;
-		var ruta = Path.IsPathRooted(dataSource) ? dataSource : Path.Combine(Directory.GetCurrentDirectory(), dataSource);
-		return File.Exists(ruta) ? new FileInfo(ruta).Length : 0;
+		using var conexion = new NpgsqlConnection(_connectionString);
+		conexion.Open();
+		using var comando = conexion.CreateCommand();
+		comando.CommandText = "SELECT pg_database_size(current_database())";
+		var resultado = comando.ExecuteScalar();
+		return resultado is long tamano ? tamano : 0;
 	}
 
 	private void PurgarBackupsAntiguos()
 	{
-		var backups = Directory.GetFiles(_carpetaBackups, $"{_PREFIJO_ARCHIVO}*.db")
+		var backups = Directory.GetFiles(_carpetaBackups, $"{_PREFIJO_ARCHIVO}*{_EXTENSION_ARCHIVO}")
 			.Select(ruta => new FileInfo(ruta))
 			.OrderByDescending(f => f.LastWriteTimeUtc)
 			.ToList();

@@ -47,7 +47,13 @@
                   "maximumError": "20kB"
                 }
               ],
-              "outputHashing": "all"
+              "outputHashing": "all",
+              "fileReplacements": [
+                {
+                  "replace": "src/app/core/api/api.config.ts",
+                  "with": "src/app/core/api/api.config.prod.ts"
+                }
+              ]
             },
             "development": {
               "optimization": false,

@@ -35,10 +35,11 @@ builder.Services.AddAuthorization(options =>
 	options.AddPolicy("SuperAdmin", policy => policy.RequireRole("SuperAdmin"));
 });
 
+var allowedOrigin = builder.Configuration["Cors:AllowedOrigin"] ?? "http://localhost:4200";
 builder.Services.AddCors(options =>
 {
 	options.AddDefaultPolicy(policy =>
-		policy.WithOrigins("http://localhost:4200")
+		policy.WithOrigins(allowedOrigin)
 			.AllowAnyHeader()
 			.AllowAnyMethod());
 });

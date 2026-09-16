@@ -1,0 +1,38 @@
+databases:
+  - name: farmcontrol-db
+    plan: free
+    databaseName: farmcontrol
+    user: farmcontrol
+
+services:
+  - type: web
+    name: farmcontrol-api
+    runtime: docker
+    rootDir: FarmControlAPI
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: ConnectionStrings__DefaultConnection
+        fromDatabase:
+          name: farmcontrol-db
+          property: connectionString
+      - key: Cors__AllowedOrigin
+        value: https://farmcontrol-web.onrender.com
+      - key: Jwt__Key
+        generateValue: true
+      - key: Jwt__Issuer
+        value: FarmControlAPI
+      - key: Jwt__Audience
+        value: FarmControlWeb
+
+  - type: web
+    name: farmcontrol-web
+    runtime: static
+    rootDir: Web
+    buildCommand: npm ci && npm run build -- --configuration production
+    staticPublishPath: ./dist/Web/browser
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html

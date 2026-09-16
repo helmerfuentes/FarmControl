@@ -13,10 +13,10 @@ public static class InfrastructureServiceExtensions
 	public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
 	{
 		var connectionString = configuration.GetConnectionString("DefaultConnection")
-			?? "Data Source=farmcontrol.db";
+			?? "Host=localhost;Port=5432;Database=farmcontrol;Username=farmcontrol;Password=farmcontrol";
 
 		services.AddDbContext<FarmControlDbContext>(options =>
-			options.UseSqlite(connectionString));
+			options.UseNpgsql(connectionString));
 
 		services.AddScoped<IFarmControlDbContext>(provider =>
 			provider.GetRequiredService<FarmControlDbContext>());
