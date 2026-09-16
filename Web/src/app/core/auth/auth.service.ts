@@ -2,6 +2,7 @@ import { Injectable, signal, computed, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { tap } from 'rxjs';
+import { API_URL } from '../api/api.config';
 
 interface LoginResponse {
   token: string;
@@ -23,7 +24,6 @@ const USER_KEY       = 'fc_user';
 const PERSONA_ID_KEY = 'fc_persona_id';
 const CLIENTE_ID_KEY = 'fc_cliente_id';
 const FINCA_IDS_KEY  = 'fc_finca_ids';
-const API_URL        = 'http://localhost:5279';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
